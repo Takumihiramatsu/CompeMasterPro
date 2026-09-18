@@ -554,6 +554,9 @@ tr.zebra.pay-drow td{background:rgba(242,208,36,.06)}
    PCでは画面名・日付・保存・段階の切替で73px。下へ送った状態で使うものがない。
    スマホ（760px以下）は64pxの低い帯で、大会名（⌂）がホームへ戻る近道なので固定のまま */
 @media screen and (min-width:761px){#work>.top{position:relative}}
+/* 読めない開催日の知らせ（v58） */
+.f-dw{display:block;margin-top:4px;font-size:11.5px;color:var(--ink-dim)}
+.f-dw.ng{color:var(--hit)}
 /* 本文や表の横スクロールのバーも地の色に（明るい帯が画面の右端や表の下に出ていた。v56）。
    scrollbar-color は子へ受け継がれるので、ここ1か所で全体にかかる。Safari は ::-webkit-scrollbar */
 @media screen{
@@ -2259,8 +2262,9 @@ function flowSteps(){
   /* 回る人。「予想のみ」は組も枠も実費も持たない */
   const plays=named.filter(p=>joinOf(p)!=="vote"||+p.g>0||p.fee!==false);
   /* 参加者がまだいない間は、作成画面（基本 → 競技方法 → 追加ルール）へ送る（@make） */
-  add("prep","meta","大会の基本を入れる", nz(m.name)&&nz(m.place)&&nz(m.date), "",
-      "大会名・会場・開催日。会場はゴルフ場マスタから選ぶとパーが入ります", named.length?"":"@make");
+  /* 開催日は「日付として読める」ことまで見る（v58）。「2027.920」のような入力が済みになり、曜日も「開催まで◯日」も出ていなかった */
+  add("prep","meta","大会の基本を入れる", nz(m.name)&&nz(m.place)&&!!evDate(m.date), nz(m.date)&&!evDate(m.date)?"開催日が読めません":"",
+      "大会名・会場・開催日。会場はゴルフ場マスタから選ぶとパーが入ります"+(nz(m.date)&&!evDate(m.date)?"。開催日は 2027.9.20 のように年・月・日を区切って入れてください":""), named.length?"":"@make");
   if(U("near")||U("nearAny")||U("drako")){ const w=holeWarn();
     add("prep","meta","技能賞の対象ホールを直す", !w.length, w.map(x=>x.label).join("・"),
         "パーと噛み合っていないホールがあります。大会設定のボタン1つで直せます","sec-holes"); }
@@ -3268,7 +3272,8 @@ function vMeta(){
     <div class="row">
       <div class="f"><label>大会名</label><input style="min-width:300px" value="${esc(m.name)}" oninput="DB.meta.name=this.value;touch();hdTitle.textContent=this.value"></div>
       <div class="f"><label>会場</label><input value="${esc(m.place)}" oninput="DB.meta.place=this.value;touch()"></div>
-      <div class="f"><label>開催日</label><input placeholder="2027.8.28" value="${esc(m.date)}" oninput="DB.meta.date=this.value;touch()"></div>
+      <div class="f"><label>開催日</label><input placeholder="2027.8.28" value="${esc(m.date)}" oninput="DB.meta.date=this.value;touch()" onchange="render()">
+        ${nz(m.date)&&!evDate(m.date)?'<small class="f-dw ng">日付として読めません。例：2027.9.20</small>':""}</div>
       <div class="f"><label>1組の人数</label><input type="number" min="2" max="6" value="${m.groupSize}" onchange="M('groupSize',+this.value||4)"></div>
     </div>
   </div>
@@ -4219,13 +4224,13 @@ function vScore(){
     <div class="s-side no-print">
       <div class="card s-check"><h2>打ち込みの検算 <small>グロス − HDCP ＝ ネット が成り立つかを1行ずつ見ます</small></h2>${scStatus(S)}</div>
       <details class="card s-paste"${S.empty===S.all?" open":""}><summary>集計表を貼り付けて取り込む</summary>
-        <p class="hint">Excel・PDF・写真から読み取った文字を貼ると、氏名で照合して一括で入ります。
+        <p class="hint">手元の集計表の文字（Excel など）を貼ると、氏名で照合して一括で入ります。
           1行に1名。氏名は省略できます（省略時は上から順に名簿へ当てます）。</p>
         <textarea id="paste" rows="6" aria-label="貼り付ける集計表"
           placeholder="1  山田　太郎  92  18.0  74.0&#10;2  鈴木　一郎  101  25.2  75.8"></textarea>
         <button class="btn primary s-read" onclick="pastePreview()">読み取る</button>
         <p class="hint">数字は「グロス・HDCP・ネット」または「グロス・ネット」の並びとして読み取ります。
-          <b>PDFがいちばん確実です。</b>写真から読み取った文字も貼れますが、貼ったあとに必ず照合してください。</p>
+          貼ったあとも、<b>全行が○になること</b>を確かめてください。写真から読み取った文字は取りこぼしや誤読が起きるので当てにしません。</p>
       </details>
       <div class="card s-end"><h2>入力が終わったら</h2>
         <p class="hint">ゴルフ場が出した集計表のグロス・HDCPをそのまま使い、ネットと順位は自動で出ます。
@@ -5644,11 +5649,10 @@ function vHelp(){
     ${U("score")?rule("スコア","順位（タブ）氏名（タブ）グロス（タブ）HDCP（タブ）ネット　…数字の並びから自動で判別。"
       +"「"+L.score+"」の右の「集計表を貼り付けて取り込む」を開いて貼ります（集計表から入れる方式のとき）。<br>"
       +"全角数字や罫線、改行の崩れがあっても読めます。氏名は省略できます。"):""}
-    ${U("score")?rule("集計表の取り込み","<b>PDFがいちばん確実です。</b>ゴルフ場から集計表をPDFでもらえるなら、"
-      +"PDFを開いて全体を選択・コピーし、貼り付け欄に貼ってください。"
-      +"文字認識を通さないので誤りが入りません。<br>"
-      +"写真から読み取った文字も貼れますが、<b>取りこぼしや誤読が起きます。</b>"
-      +"貼ったあとは必ず1行ずつ照合してください。<br>"
+    ${U("score")?rule("集計表の取り込み","<b>正規の手順は、打ち込んで1行ずつ検算することです</b>（グロス・HDCP・ネットの3つ。全行○で確定）。"
+      +"ゴルフ場に別の形式を頼む必要はありません。<br>"
+      +"手元に文字の集計表（Excel など）があれば、貼り付けでも入ります。写真から読み取った文字は<b>取りこぼしや誤読が起きる</b>ので当てにしません。"
+      +"どちらも、貼ったあとに全行が○になることを確かめてください。<br>"
       +"<b>氏名がなくても構いません。</b>数字だけを上から順に貼れば、名簿の並びに当てます。"):""}
     ${U("score")?rule("コースのパー","スコアカードのパーの行をそのまま。ホール番号やOUT/INの合計が混じっても除きます。"):""}
     </tbody></table>

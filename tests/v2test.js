@@ -2323,6 +2323,33 @@ console.log('\n=== 1本のスクロール（2026-09-18、v57：サイドバー�
   T('足元の3つ（ホーム・データ・使い方）は変えていない', ()=>{app.sample();global.flush();const x=app.sideHtml();return /class="sd-foot"/.test(x)&&/ホーム/.test(x)&&/データ/.test(x)&&/使い方/.test(x);});
 }
 
+console.log('\n=== PDFの宿題の取り下げ・読めない開催日（2026-09-18、v58） ===');
+/* ・「ゴルフ場に集計表のPDFを頼む」は、文字認識を検討していた頃の名残（平松さんの判断、9/18）。
+     正規の手順は打ち込んで検算することだけ。アプリの説明から「PDFがいちばん確実」を外す。貼り付けの機能は残す
+   ・大会設定で「2027.920」のような開催日が黙って通り、曜日も「開催まで◯日」も出ず、大会ハブは「済み」になっていた */
+{
+  const T=(l,f,x)=>{let v,e='';try{v=(typeof f==='function')?f():f;}catch(err){v=false;e=String(err&&err.message||err);}chk(l,!!v,e||x||'');};
+  const P=()=>{app.render();return store['pane'].innerHTML;};
+  T('アプリに「PDFがいちばん確実」「PDFでもらえるなら」が残っていない', !h.includes('PDFがいちばん確実')&&!h.includes('PDFでもらえるなら'));
+  app.sample(); global.flush(); app.setPhase('day'); app.SCset('entry','sheet'); app.go('score');
+  const S=P();
+  T('貼り付けの機能は残す', /<details class="card s-paste"/.test(S)&&/onclick="pastePreview\(\)"/.test(S));
+  T('貼ったあとも全行○を確かめると書く', /貼ったあとも、<b>全行が○になること<\/b>を確かめてください/.test(S));
+  app.go('help');
+  T('使い方：正規の手順は打ち込んで検算すること', /<b>正規の手順は、打ち込んで1行ずつ検算することです<\/b>/.test(P())&&/ゴルフ場に別の形式を頼む必要はありません/.test(P()));
+  app.SCset('entry','hidden'); app.setPhase('prep');
+  const D=app.DB(), keep=D.meta.date;
+  const step=()=>app.flowSteps().find(x=>x.label==='大会の基本を入れる')||{};
+  T('読める開催日なら「大会の基本」は済み', step().done===true);
+  D.meta.date='2027.920'; app.go('meta');
+  T('大会設定：読めない開催日を知らせる', /<small class="f-dw ng">日付として読めません。例：2027\.9\.20<\/small>/.test(P()));
+  T('大会設定：入れ終えたら描き直す（onchange。1文字ごとには描き直さない）', /oninput="DB\.meta\.date=this\.value;touch\(\)" onchange="render\(\)"/.test(P()));
+  T('大会ハブ：「大会の基本」を済みにせず、理由を出す', step().done===false&&step().rest==='開催日が読めません'&&/年・月・日を区切って/.test(step().desc), step().rest);
+  D.meta.date='2027.9.20';
+  T('直せば済みに戻り、知らせも消える', step().done===true&&!/f-dw ng/.test(P()));
+  D.meta.date=keep;
+}
+
 console.log('\n=== 賞は名前で発表する ===');
 /* 「その他の賞」と出しても、受け手には何の賞か分からない。
    見出しをその賞の名前にして1枚ずつ出す。

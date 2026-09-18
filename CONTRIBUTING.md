@@ -22,7 +22,7 @@ CompeMasterPro/
 │   ├─ pc.webmanifest     ホーム画面への追加用
 │   ├─ icon-*.png / apple-touch-icon.png
 │   └─ README.md          配布のしかた（利用者向け）
-├─ tests/                 ← 検証スイート。25本・2167項目
+├─ tests/                 ← 検証スイート。25本・2170項目
 │   └─ *.js
 └─ CONTRIBUTING.md        この文書
 ```
@@ -37,13 +37,13 @@ cd CompeMasterPro/tests
 for f in *.js; do echo "== $f"; node "$f"; done
 ```
 
-**`NG` が0で、`OK` の合計が2167であれば準備完了です。** 何もインストールする必要はありません。
+**`NG` が0で、`OK` の合計が2170であれば準備完了です。** 何もインストールする必要はありません。
 
 **「NGが0」だけで判断しないでください。** 1本が途中で例外になると「合計 NG」が出ないまま止まります
-（2026-09-16に `money.js` で発生）。OKの合計が2167に届くことまで確かめます。
+（2026-09-16に `money.js` で発生）。OKの合計が2170に届くことまで確かめます。
 
 ```bash
-for f in *.js; do node "$f"; done 2>&1 | grep -cE '^\s*OK\b'   # → 2167
+for f in *.js; do node "$f"; done 2>&1 | grep -cE '^\s*OK\b'   # → 2170
 ```
 
 アプリを触るときは `docs/pc.html` をブラウザで直接開いてください。サーバーは要りません。
@@ -64,7 +64,7 @@ for f in *.js; do node "$f"; done 2>&1 | grep -cE '^\s*OK\b'   # → 2167
 ### 4番を忘れないでください
 
 ```js
-const VER = "compe-v56";   // ← 番号を必ず上げる
+const VER = "compe-v57";   // ← 番号を必ず上げる
 ```
 
 サービスワーカーはキャッシュ優先で動きます。**`VER` を変えないと、利用者の端末に

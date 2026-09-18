@@ -1,0 +1,32 @@
+{
+  "name": "CompeMaster Pro｜ゴルフコンペ総合運営システム",
+  "short_name": "CompeMasterPro",
+  "description": "参加者・組み合わせ・スコア集計・賞金・表彰式の演出までを1つで行う運営システム",
+  "id": "/golf-compe-pc/",
+  "start_url": "./pc.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#081810",
+  "theme_color": "#081810",
+  "lang": "ja",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512-maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

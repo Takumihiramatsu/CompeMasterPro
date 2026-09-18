@@ -2300,20 +2300,26 @@ console.log('\n=== 集金のあとの差額（2026-09-18、v55：受け取った
   app.setPhase('prep');
 }
 
-console.log('\n=== 背の低い画面のサイドバー（2026-09-18、v56：スクロールバーの色・足元の貼り付け） ===');
-/* 実機の画面で指摘：準備の段階でサイドバーが画面の高さを超えると、ブラウザ標準の明るいスクロールバーが
-   サイドバーと本文の間に白い枠のように出ていた。あわせて足元の「ホーム・データ・使い方」が画面の外へ押し出され、
-   スクロールバーの幅だけ狭くなって項目が2行に折れていた。実際の見え方はブラウザの検査で確かめる */
+console.log('\n=== 1本のスクロール（2026-09-18、v57：サイドバーと上の帯を本文と一緒に流す・ロゴをそろえる） ===');
+/* v56：背の低い画面でサイドバーが画面の高さを超え、明るいスクロールバーが白い枠のように出た・足元の「ホーム」が隠れた。
+   v56で見た目を抑えたが、原因は「左右を別々にスクロールさせる作り」。実際に使って深いスクロールが苦にならないと確かめ（9/18）、
+   PCとタブレットは1本のスクロールにする。スマホは低い上の帯（⌂でホームへ）と下タブを固定のまま。
+   あわせて、タブレット幅に旧デザインのロゴ（紋章と英字の副題）が残っていたのを、サイドバー・ホームと同じ文字のロゴにそろえた。
+   実際の見え方はブラウザの検査で確かめる（スクロールバーを出した状態） */
 {
-  const ia=h.indexOf('/* ---- 背の低い画面のサイドバー（2026-09-18、v56）');
-  const css=ia>=0?h.slice(ia,h.indexOf('</style>',ia)):'';
-  const T=(l,f)=>{let v;try{v=f();}catch(e){v=false;}chk(l,!!v);};
-  T('足元を画面の下に貼り付ける', ()=>/\.sd-foot\{position:sticky;bottom:-16px;z-index:1;padding-bottom:16px;background:#0a1d13/.test(css));
-  T('サイドバーのスクロールバーは細く地の色', ()=>/\.side\{scrollbar-width:thin;scrollbar-color:var\(--rule\) transparent\}/.test(css));
-  T('Safari でも同じ色（::-webkit-scrollbar）', ()=>/\.side::-webkit-scrollbar\{width:6px\}/.test(css)&&/\.side::-webkit-scrollbar-thumb\{background:var\(--rule\)/.test(css));
-  T('背の低い画面では、マウスのときだけ行を詰める', ()=>/@media screen and \(min-width:1024px\) and \(max-height:820px\) and \(pointer:fine\)\{[^}]*\}[\s\S]*?\.sd-i\{min-height:32px/.test(css));
-  T('本文と表のスクロールバーも地の色（受け継がれる scrollbar-color）', ()=>/@media screen\{\s*html\{scrollbar-color:var\(--rule\) var\(--board\)\}/.test(css));
-  T('スクロールバーを隠している上のタブ列はそのまま', ()=>/\.tabs\{[^}]*scrollbar-width:none/.test(h)&&/\.tabs::-webkit-scrollbar\{display:none\}/.test(h));
+  const T=(l,f)=>{let v;try{v=(typeof f==='function')?f():f;}catch(e){v=false;}chk(l,!!v);};
+  /* <style> は3つある。本文の見た目は3つ目（いちばん大きい）にあるので、全部をつなげて見る */
+  const css=h.split('<style>').slice(1).map(x=>x.split('</style>')[0]).join('\n');
+  const side=(/\n  \.side\{display:flex;[^}]*\}/.exec(css)||[''])[0];
+  T('サイドバーは本文と一緒に流れる（固定と独立スクロールを外す）', /align-self:stretch;\s*min-height:100vh;/.test(side)&&!/overflow-y:auto/.test(side)&&!/position:sticky/.test(side)&&!/height:100vh;overflow/.test(side));
+  T('足元は一覧のすぐ下', /\.sd-foot\{margin-top:18px\}/.test(css));
+  T('v56の貼り付け・細いスクロールバー・行の詰めは外した（要らなくなった）', !/\.sd-foot\{position:sticky/.test(css)&&!/\.side\{scrollbar-width/.test(css)&&!/\(max-height:820px\) and \(pointer:fine\)/.test(css));
+  T('サイドバーの地の色をページの下端まで届かせる', /body\.work #work\{padding-bottom:0\}\s*#work>\.wrap\{padding-bottom:56px\}/.test(css));
+  T('上の帯を固定するのはスマホだけ', /@media screen and \(min-width:761px\)\{#work>\.top\{position:relative\}\}/.test(css)&&/\n\.top\{position:sticky;top:0/.test(css));
+  T('本文と表のスクロールバーは地の色（v56のまま）', /@media screen\{\s*html\{scrollbar-color:var\(--rule\) var\(--board\)\}/.test(css));
+  T('タブレットのロゴはサイドバー・ホームと同じ文字のロゴで、押すとホーム', h.includes('<button class="brand" onclick="go(\'home\')" title="ホームへ"><span class="cmark">CompeMaster<b>PRO</b></span></button>'));
+  T('旧デザインのロゴ（紋章・英字の副題）は残っていない', !/<div class="emblem">/.test(h)&&!h.includes('GOLF EVENT MANAGEMENT SYSTEM'));
+  T('スクロールバーを隠している上のタブ列はそのまま', /\.tabs\{[^}]*scrollbar-width:none/.test(h)&&/\.tabs::-webkit-scrollbar\{display:none\}/.test(h));
   T('足元の3つ（ホーム・データ・使い方）は変えていない', ()=>{app.sample();global.flush();const x=app.sideHtml();return /class="sd-foot"/.test(x)&&/ホーム/.test(x)&&/データ/.test(x)&&/使い方/.test(x);});
 }
 

@@ -848,6 +848,16 @@ app.sample(); global.flush(); app.setPhase('prep');
   let ce=null; try{ app.copyResult(); }catch(x){ ce=x.message; }
   chk('コピーで落ちない（クリップボードが無い端末でも）', !ce, ce||'');
   chk('ファイルに書き出せる', /onclick="dlJson\(\)">ファイルに書き出す/.test(P()));
+  /* 2026-09-20：以前は「印刷と発表」のボタンが画面を移すだけで、押しても印刷が始まらなかった。
+     押すとその画面を開いて続けて印刷する（go()のあとにwindow.print()を呼ぶ）。
+     「発表の画面へ」は印刷ではないので別カードに分けた */
+  chk('印刷するカードは、押すと画面を開いてそのまま印刷する', /<h2>印刷する <small>押すとその画面を開き、続けて印刷します<\/small><\/h2>[\s\S]*onclick="go\('rank'\);window\.print\(\)">順位・表彰を印刷<\/button>[\s\S]*onclick="go\('collect'\);window\.print\(\)">集金表を印刷/.test(P()));
+  chk('発表への案内は印刷のカードと分ける', /<h2>発表<\/h2>\s*<div class="row"><button class="btn ghost" onclick="go\('result'\)">発表の画面へ<\/button>/.test(P()));
+  app.useSet('budget',false);
+  chk('集金を使わなければ集金表の印刷は出さない', !/集金表を印刷/.test(P())&&/順位・表彰を印刷/.test(P()));
+  app.useSet('score',false);
+  chk('順位も使わなければ印刷するカード自体を出さない', !/<h2>印刷する/.test(P())&&/<h2>発表<\/h2>/.test(P()));
+  app.useSet('budget',true); app.useSet('score',true);
 }
 
 console.log('\n=== 入口（段階3：上の帯・ホーム・作成画面・大会ハブの仕上げ） ===');
@@ -1314,7 +1324,7 @@ console.log('\n=== 当日と結果（段階5：スコア入力P7・順位・表�
   const run=app.RUN();
   run.forEach(p=>{const sc=app.scoreOf(p.n); sc.gross=''; sc.hc=''; sc.netRef='';});
   app.go('score');
-  T('空のときは貼り付けを開いておく', ()=>/<details class="card s-paste" open><summary>集計表を貼り付けて取り込む<\/summary>/.test(P())&&/<textarea id="paste"/.test(P()));
+  T('空のときは貼り付けを開いておく', ()=>/<details class="card s-paste" open><summary>集計表を貼り付けて全員分を取り込む<\/summary>/.test(P())&&/<textarea id="paste"/.test(P()));
   run.forEach((p,i)=>{if(i<12){const sc=app.scoreOf(p.n); sc.gross=90; sc.hc=10; sc.netRef=80;}});
   app.scoreOf(run[2].n).netRef=79.4;
   app.scoreOf(run[12].n).gross=95;
@@ -1410,6 +1420,9 @@ console.log('\n=== 当日と結果（段階5：スコア入力P7・順位・表�
   T('賞の列（ベスグロは設定の賞として1つだけ）', ()=>{const r=P().split('<td class="c r-rk">1</td>')[1].split('</tr>')[0];
     return /<span class="r-pz">優勝 <b>10,000円<\/b><\/span>/.test(r)&&(r.match(/ベスグロ/g)||[]).length===(st.best.n===w.n?1:0);});
   T('賞の列は印刷にも出す', ()=>/<th style="min-width:9em">賞<\/th>/.test(P())&&/<td class="r-pzs">/.test(P())&&/@media print\{\.r-grid,\.s-grid\{display:block\}\.r-pz\{color:#000\}/.test(css));
+  /* 2026-09-20：順位表（r-main）が見出しの下に収まりきらず、丸ごと2枚目へ送られて1枚目が空白になっていた
+     （集金表と同じ原因）。集金表（#sec-collect）と同様に、このカードだけページをまたいでよいことにした */
+  T('印刷：順位表のカードはページをまたいでよい（1枚目が空かない）', ()=>/@media print\{\.r-main\{page-break-inside:auto;break-inside:auto\}\}/.test(css));
   app.useSet('prize',false);
   T('賞金を使わなくてもベスグロは出す', ()=>new RegExp('<b>'+st.best.n+'</b>[\\s\\S]*?<td class="r-pzs"><span class="r-pz">ベスグロ</span></td>').test(P())&&!/class="card r-sum"/.test(P()));
   app.useSet('prize',true);
@@ -2001,7 +2014,7 @@ console.log('\n=== 仕上げ（段階9：使い方・印刷・参加者カード
   T('コースの収録数はマスタから数える', ()=>{const [f,c]=X('mstCount')||[0,0];return f===2254&&c===5122&&/全国47都道府県の<b>2,254施設・5,122コース<\/b>/.test(H)&&!/379施設/.test(H);});
   T('罰金の手動指定は「結果・発表」にある', ()=>/得票数が並んだときは、「結果・発表」の「手動指定」で決めてください/.test(H)&&!/賞金・収支タブの「手動指定」/.test(H));
   T('「会費」は「賞金の原資」と書く', ()=>/<b>賞金の原資<\/b>/.test(H)&&!/<b>会費<\/b>/.test(H)&&/対象は 16名/.test(H));
-  T('貼り付けの場所を書く', ()=>/「参加者」の「貼り付けて取り込む」に貼ります/.test(H)&&/「紙の予想を貼り付け」から/.test(H)&&/「スコア入力」の右の「集計表を貼り付けて取り込む」/.test(H));
+  T('貼り付けの場所を書く', ()=>/「参加者」の「貼り付けて取り込む」に貼ります/.test(H)&&/「紙の予想を貼り付け」から/.test(H)&&/「スコア入力」の右の「集計表を貼り付けて全員分を取り込む」/.test(H));
   T('スマホで使うとき（参加者・組み合わせ・集金・スコア・順位）', ()=>{const c=H.split('<h2>スマホで使うとき')[1].split('</div>')[0];
     return /1人1枚のカードです。押すと、組・枠・参加のしかた・原資などの欄が開きます/.test(c)&&/長押しして運ぶ/.test(c)&&/受け取り済みになります/.test(c)&&/画面の数字キーで入れます/.test(c)&&/ネット順とグロス順/.test(c);});
   T('発表の操作に操作パネルとスクリーンの表示', ()=>/<b>操作パネル<\/b>/.test(H)&&/<b>先にパネルを開いてから<\/b>/.test(H)&&/<b>スクリーンの表示<\/b>/.test(H)&&/受賞者名は出しません/.test(H)&&/「順位・表彰」の「発表をはじめる」、または「結果・発表」の「発表をはじめる」/.test(H));

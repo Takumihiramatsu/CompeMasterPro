@@ -64,7 +64,7 @@ for f in *.js; do node "$f"; done 2>&1 | grep -cE '^\s*OK\b'   # → 2179
 ### 4番を忘れないでください
 
 ```js
-const VER = "compe-v59";   // ← 番号を必ず上げる
+const VER = "compe-v61";   // ← 番号を必ず上げる
 ```
 
 サービスワーカーはキャッシュ優先で動きます。**`VER` を変えないと、利用者の端末に

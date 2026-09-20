@@ -1,5 +1,5 @@
 /* オフラインで動かすためのキャッシュ。ファイルを更新したら VER を上げてください */
-const VER = "compe-v59";
+const VER = "compe-v61";
 const FILES = [
   "./", "./index.html", "./pc.html", "./pc.webmanifest",
   "./icon-192.png", "./icon-512.png", "./icon-512-maskable.png", "./apple-touch-icon.png"

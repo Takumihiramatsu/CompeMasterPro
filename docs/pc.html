@@ -1369,7 +1369,7 @@ const blank=()=>({
   v:2,
   meta:{name:"第1回 ゴルフコンペ",place:"",date:"",
         groupSize:4,
-        use:{score:true,near:true,nearAny:false,drako:true,keiba:true,gto:true,fine:false,prize:true,budget:true,team:false,lucky:false},
+        use:{score:true,near:true,nearAny:false,drako:true,birdie:false,keiba:true,gto:true,fine:false,prize:true,budget:true,team:false,lucky:false},
         kPrice:200,gPrice:500,gMode:"3連複",frameMode:"group",
         fineUnit:1000,fineTop:3,
         nearHoles:[4,7,12,16],nearAnyHoles:[2,11],drakoHoles:[5,14],
@@ -1384,7 +1384,7 @@ const blank=()=>({
                       {label:"10位",kind:"rank",n:10,amt:1000},
                       {label:"BB",kind:"last",n:2,amt:1000},
                       {label:"ベスグロ",kind:"best",n:1,amt:2000}],
-                near:1000,nearAny:1000,drako:1000,team:5000,lucky:1000},
+                near:1000,nearAny:1000,drako:1000,birdie:1000,eagle:3000,team:5000,lucky:1000},
         team:{use:"sum",size:3,top:1},
         lucky:{count:2,exclude:true},
         /* collect は当日ひとりずつから集める実費（プレー代・昼食代など）。
@@ -1887,6 +1887,13 @@ const feeTotal=()=>DB.players.reduce((a,p)=>a+feeOf(p),0);
 const nineSum=(p,back)=>{const s=scoreOf(p.n);let t=0;
   for(let i=(back?9:0);i<(back?18:9);i++){const v=+s.h[i+1];if(!v)return null;t+=v;}
   return t;};
+/* ---- 大波・小波・おしどり賞（2026-09-20）。前半（OUT）・後半（IN）の差で決まる賞。
+   nineSum が null（18ホールの内訳が無い大会）を返せば、他の賞（ベストOUT/IN）と同じく対象外になる */
+const waveOf=p=>{const o=nineSum(p,false),i=nineSum(p,true);
+  return (o===null||i===null)?null:Math.abs(o-i);};
+/* ---- 早出賞（2026-09-20）。個人ではなく「組」のスタート時刻で決まる。
+   同じ組は全員タイになるのが普通なので、他の賞と同じく tieCmp（同スコアのとき）で1名に絞る */
+const startOf=p=>{const g=DB.groups.find(x=>x.no===+p.g); const t=g&&tParse(g.time); return (t===null||t===undefined)?null:t;};
 function pickBy(sel,cmp){
   const a=RUN().map(p=>({p,v:sel(p)})).filter(x=>x.v!==null&&x.v!==undefined&&x.v!==""&&!isNaN(x.v));
   if(!a.length) return "";
@@ -1931,6 +1938,11 @@ function rankWinner(r,st){
   if(r.kind==="bestOut")  return pickBy(p=>nineSum(p,false),(a,b)=>a-b);
   if(r.kind==="bestIn")   return pickBy(p=>nineSum(p,true),(a,b)=>a-b);
   if(r.kind==="maxhc")    return pickBy(p=>hcOf(p),(a,b)=>b-a);
+  /* 2026-09-20：大波・小波（前後半の差が最大／最小）・おしどり（差がゼロ）・早出（組のスタート時刻が最速） */
+  if(r.kind==="bigWave")   return pickBy(p=>waveOf(p),(a,b)=>b-a);
+  if(r.kind==="smallWave") return pickBy(p=>waveOf(p),(a,b)=>a-b);
+  if(r.kind==="pair")      return pickBy(p=>waveOf(p)===0?0:null,(a,b)=>0);
+  if(r.kind==="earliest")  return pickBy(p=>startOf(p),(a,b)=>a-b);
   if(r.kind==="last"){const i=st.net.length-(+r.n||1);return i>=0&&st.net[i]?st.net[i].n:"";}
   if(r.kind==="manual") return r.who||"";
   const x=st.net[(+r.n||1)-1];return x?x.n:"";
@@ -1980,18 +1992,35 @@ function skillRows(){
                              rec:(DB[key].find(x=>+x.hole===h)||{}).rec||""}))};
   });
 }
+/* 2026-09-20：イーグル・バーディー賞。ニアピン・ドラコンと違い対象ホールを決め打ちできず、
+   同じ大会で複数ホール・複数人が該当しうるので、手入力（DB[key]）ではなくホール別グロスから毎回自動で出す。
+   18ホールの内訳（大波・小波・おしどりと同じ前提）が無ければ対象外にする */
+function birdieRows(){
+  const par=SC().par; if(!Array.isArray(par)||par.length!==18) return [];
+  const out=[];
+  RUN().forEach(p=>{const s=scoreOf(p.n);
+    for(let h=1;h<=18;h++){const v=+s.h[h]; if(!v) continue;
+      const diff=v-par[h-1];
+      if(diff<=-2) out.push({n:p.n,hole:h,label:"イーグル",gross:v});
+      else if(diff===-1) out.push({n:p.n,hole:h,label:"バーディー",gross:v});}});
+  return out.sort((a,b)=>a.hole-b.hole||nz(a.n).localeCompare(nz(b.n)));
+}
+const birdieUnit=label=>+PZ()[label==="イーグル"?"eagle":"birdie"]||0;
+const birdieTotal=()=>U("birdie")?birdieRows().reduce((s,x)=>s+birdieUnit(x.label),0):0;
 function prizeTotal(){
   const a=prizeRows().reduce((s,r)=>s+(+r.amt||0),0);
   const b=skillRows().reduce((s,r)=>s+r.total,0);
   const t=U("team")?(+PZ().team||0)*(+TM().top||1):0;
   const l=U("lucky")?(+PZ().lucky||0)*(+LK().count||0):0;
-  return {rank:a,skill:b,team:t,lucky:l,all:a+b+t+l};
+  const d=birdieTotal();
+  return {rank:a,skill:b,team:t,lucky:l,birdie:d,all:a+b+t+l+d};
 }
 function prizeOf(name){
   let v=0;
   prizeRows().forEach(r=>{if(r.who&&nz(r.who)===nz(name))v+=(+r.amt||0);});
   skillRows().forEach(r=>r.list.forEach(x=>{if(x.who&&nz(x.who)===nz(name))v+=r.unit;}));
   if(U("lucky")&&(DB.result.lucky||[]).some(n=>nz(n)===nz(name))) v+=(+PZ().lucky||0);
+  if(U("birdie")) birdieRows().forEach(x=>{if(nz(x.n)===nz(name)) v+=birdieUnit(x.label);});
   return v;
 }
 function budget(){
@@ -3042,15 +3071,19 @@ function vRank(){
     </div>
   </div>`;
   const PT=U("prize")?prizeTotal():null;
+  const BD=U("birdie")?birdieRows():null;
   const side=`<div class="r-side no-print">
     ${S.length?`<div class="card r-sk"><h2>技能賞 <small>${S.reduce((a,x)=>a+x.wonN,0)} / ${S.reduce((a,x)=>a+x.n,0)} 決定</small></h2>
       <ul>${S.flatMap(r=>r.list.map(x=>`<li><span>${esc(r.label)} ${x.h}番</span><b class="${x.who?"":"r-yet"}">${x.who?esc(x.who):"未定"}</b></li>`)).join("")||'<li><span>対象ホールがありません</span></li>'}</ul>
       <button class="btn ghost" onclick="go('prize')">受賞者を入れる</button></div>`:""}
+    ${BD?`<div class="card r-bd"><h2>イーグル・バーディー <small>${BD.length}件</small></h2>
+      <ul>${BD.map(x=>`<li><span>${x.hole}番 ${esc(x.label)}</span><b>${esc(x.n)}</b></li>`).join("")||
+        `<li><span>${Array.isArray(SC().par)&&SC().par.length===18?"まだありません":"18ホールの内訳が無いと出ません"}</span></li>`}</ul></div>`:""}
     <div class="card r-plan"><h2>発表の順番 <small>${plan.n}枚</small></h2>
       <ol>${plan.parts.map(x=>`<li>${esc(x.l)}${x.n>1?`<small>${x.n}枚</small>`:""}</li>`).join("")}</ol>
       <p class="hint">発表の画面では ← → で進む ・ F 全画面 ・ M 音</p></div>
     ${PT?`<div class="card r-sum"><h2>賞金合計</h2><b>${yen(PT.all)}<em>円</em></b>
-      <span>順位賞 ${yen(PT.rank)}${PT.skill?" ・ 技能賞 "+yen(PT.skill):""}${PT.team?" ・ 団体賞 "+yen(PT.team):""}${PT.lucky?" ・ 抽選賞 "+yen(PT.lucky):""}</span>
+      <span>順位賞 ${yen(PT.rank)}${PT.skill?" ・ 技能賞 "+yen(PT.skill):""}${PT.birdie?" ・ バーディー・イーグル "+yen(PT.birdie):""}${PT.team?" ・ 団体賞 "+yen(PT.team):""}${PT.lucky?" ・ 抽選賞 "+yen(PT.lucky):""}</span>
       ${U("budget")?`<span class="${feeTotal()-PT.all<0?"ng":""}">原資 ${yen(feeTotal())}円（${feeMembers().length}名）・ 残 ${yen(feeTotal()-PT.all)}円</span>`:""}</div>`:""}
   </div>`;
   /* 反映済みならその場で始める。順位が変わっていたら知らせて反映へ（9/17の決定） */
@@ -3190,7 +3223,8 @@ function budgetSum(){
 const RULEG=[["競技",[["score","スコア・順位","ペリア方式でネット順位を出す"],
                     ["near","ニアピン","パー3でピンに最も近づけた人"],
                     ["nearAny","何でもニアピン","何打目でもよいニアピン"],
-                    ["drako","ドラコン","パー5で最も遠くへ飛ばした人"]]],
+                    ["drako","ドラコン","パー5で最も遠くへ飛ばした人"],
+                    ["birdie","イーグル・バーディー賞","対象ホールを決めずに自動判定。手入力は不要"]]],
             ["予想ゲーム",[["keiba","馬券（枠連予想）","ネット上位2名の枠の組合せを当てる"],
                     ["gto","GTO（下位予想）","グロス下位3名を当てる"],
                     ["fine","罰金","得票上位者に負けた人が支払う"]]],
@@ -3203,6 +3237,7 @@ const ruleOnN=()=>RULEKEYS().filter(k=>U(k)).length;
 /* 選ぶ前に、何が増えるかを見せる（2026-09-16） */
 const ruleFn=k=>({score:"画面が増える：スコア入力・順位・表彰",near:"画面が増える：ニアピン・ドラコン",
     nearAny:"画面が増える：ニアピン・ドラコン",drako:"画面が増える：ニアピン・ドラコン",
+    birdie:"順位・表彰に一覧が増える（18ホールの内訳が無いと出ません）",
     keiba:"画面が増える：予想入力・集計",gto:"画面が増える：予想入力・集計",
     fine:U("gto")?"発表に選抜者と罰金の画面":"GTOの得票で決まるので、GTOと一緒に使います",
     prize:"画面が増える：賞金・収支",budget:"画面が増える：賞金・収支",
@@ -3223,7 +3258,7 @@ function rulesHtml(){
   return RULEG.map(([t,ks])=>`<div class="rule-g"><div class="rule-gt">${t}</div>
       <div class="rules">${ks.map(([k,l,d])=>rule(k,l,d)).join("")}</div></div>`).join("");
 }
-const RULESHORT={score:"スコア・順位",near:"ニアピン",nearAny:"何でもニアピン",drako:"ドラコン",keiba:"馬券",
+const RULESHORT={score:"スコア・順位",near:"ニアピン",nearAny:"何でもニアピン",drako:"ドラコン",birdie:"バーディー賞",keiba:"馬券",
   gto:"GTO",fine:"罰金",prize:"賞金",budget:"収支・集金",team:"団体賞",lucky:"抽選賞"};
 /* 使っているルールの札。押すと追加ルールの画面へ */
 function ruleChips(add){
@@ -5053,6 +5088,22 @@ function pzSkip(){
   touch();render();
   alert(add?add+"件の飛び賞を追加しました。金額を調整してください。":"追加するものがありませんでした。");
 }
+/* 2026-09-20：「決め方」を知らないと作れない賞（下から数えて2＝ブービー等）を、
+   ワンクリックで追加できるようにする。同じ名前の賞が既にあれば増やさない（pzSkipのnと同じ考え方） */
+const PZPRESET=[
+  {label:"猛打賞",           kind:"last",   n:1, amt:1000},
+  {label:"ブービー賞",       kind:"last",   n:2, amt:1000},
+  {label:"ブービーメーカー賞", kind:"last",   n:3, amt:1000},
+  {label:"ベストドレッサー賞", kind:"manual", amt:1000},
+  {label:"珍プレー賞",       kind:"manual", amt:1000}];
+function pzPreset(){
+  const have=new Set(PZ().rank.map(r=>r.label));
+  const add=PZPRESET.filter(p=>!have.has(p.label));
+  if(!add.length){alert("追加できるものがありません（同じ名前の賞が既にあります）。");return;}
+  PZ().rank.push(...add.map(p=>({...p})));
+  touch();render();
+  alert(add.length+"件のよくある賞を追加しました。金額と（手で指定の賞は）受賞者を決めてください。");
+}
 function pzDel(i){PZ().rank.splice(i,1);touch();render();}
 function bgAdd(k){BG()[k].push({label:"",amt:0});touch();render();}
 function cAdd(label,mode){BG().collect.push({label:label||"",amt:0,mode:mode||"each"});touch();render();}
@@ -5117,6 +5168,8 @@ function prizeSourceCard(){
         R.length?R.map(r=>esc(r.label)+" "+yen(+r.amt||0)).join("　/　"):"設定なし"):""}
       ${S.length?line("技能賞",P.skill,
         S.map(r=>r.label+" "+r.n+"ホール × "+yen(r.unit)).join("　/　")):""}
+      ${U("birdie")?line("バーディー・イーグル",P.birdie,
+        "イーグル "+yen(+PZ().eagle||0)+"　/　バーディー "+yen(+PZ().birdie||0)):""}
       ${U("team")?line("団体賞",P.team,yen(+PZ().team||0)+"円 × 上位"+(+TM().top||1)+"組"):""}
       ${U("lucky")?line("抽選賞",P.lucky,yen(+PZ().lucky||0)+"円 × "+(+LK().count||0)+"名"):""}
       <tr><td><b>賞金の合計</b></td><td class="n"><b>${yen(P.all)}</b></td></tr>
@@ -5366,6 +5419,8 @@ function vMoney(){
   const P=prizeTotal(),R=prizeRows(),S=skillRows(),Bd=budget(),T=settle();
   const KINDS=[["rank","順位"],["last","下から数えて"],["best","ベスグロ"],
     ["oldest","最年長"],["youngest","最年少"],["bestOut","ベストOUT"],["bestIn","ベストIN"],
+    ["bigWave","大波（前後半の差が最大）"],["smallWave","小波（前後半の差が最小）"],
+    ["pair","おしどり（前後半が同スコア）"],["earliest","早出（組のスタートが最速）"],
     ["maxhc","ハンディ最大"],["manual","手で指定"]];
   const kindOpt=r=>KINDS.map(([k,l])=>`<option value="${k}" ${r.kind===k?"selected":""}>${l}</option>`).join("");
   const who=(r)=>r.kind==="manual"
@@ -5391,8 +5446,9 @@ function vMoney(){
       <div class="f"><label>飛び賞をまとめて追加</label>
         <input id="skipN" type="number" min="2" max="20" value="5" style="width:70px"></div>
       <button class="btn ghost" onclick="pzSkip()">○位ごとに追加</button>
-      <span class="hint">「下から数えて」の1＝最下位、2＝ブービー（BB）。<br>
-        最年長・最年少は生年月日、ベストOUT／INは18ホール入力のときに使えます。</span></div>
+      <button class="btn ghost" onclick="pzPreset()">よくある賞をまとめて追加</button>
+      <span class="hint">「下から数えて」の1＝最下位（猛打賞）、2＝ブービー（BB）、3＝ブービーメーカー。<br>
+        最年長・最年少は生年月日、ベストOUT／IN・大波／小波・おしどりは18ホール入力のとき、早出は組のスタート時刻を入れたときに使えます。</span></div>
   </div>
   ${U("team")?`<div class="card"><h2>団体賞 <small>参加者タブの「所属」でチーム分けします</small></h2>
     <div class="row">
@@ -5447,10 +5503,28 @@ function vMoney(){
     ${S.map(r=>r.list.length?`<div class="hint" style="margin-top:8px"><b>${r.label}</b>　${
       r.list.map(x=>x.h+"H "+(x.who?esc(x.who)+(x.rec?"（"+esc(x.rec)+"）":""):"未定")).join("　")}</div>`:"").join("")}
     <div class="stat-row"><div>順位賞<b>${yen(P.rank)}円</b></div><div>技能賞<b>${yen(P.skill)}円</b></div>
+      ${U("birdie")?`<div>バーディー・イーグル<b>${yen(P.birdie)}円</b></div>`:""}
       ${U("team")?`<div>団体賞<b>${yen(P.team)}円</b></div>`:""}
       ${U("lucky")?`<div>抽選賞<b>${yen(P.lucky)}円</b></div>`:""}
       <div>賞金 合計<b class="hi">${yen(P.all)}円</b></div></div>
   </div>`:""}
+  ${U("birdie")?(()=>{const BR=birdieRows(),eg=BR.filter(x=>x.label==="イーグル"),bd=BR.filter(x=>x.label==="バーディー");
+    return `<div class="card"><h2>バーディー・イーグル賞 <small>18ホールの内訳から自動判定・対象ホールの指定は不要</small></h2>
+    <table><thead><tr><th style="min-width:10em">賞</th>
+      <th class="n" style="width:100px">1つあたり</th><th class="c" style="width:60px">件数</th>
+      <th class="n" style="width:110px">計</th></tr></thead><tbody>
+    <tr class="zebra"><td>イーグル</td>
+      <td class="n"><input class="q" style="width:84px" type="number" step="100" value="${+PZ().eagle||0}"
+        onchange="PZ().eagle=+this.value||0;touch();render()"></td>
+      <td class="c">${eg.length}</td><td class="n">${yen(eg.length*(+PZ().eagle||0))}</td></tr>
+    <tr class="zebra"><td>バーディー</td>
+      <td class="n"><input class="q" style="width:84px" type="number" step="100" value="${+PZ().birdie||0}"
+        onchange="PZ().birdie=+this.value||0;touch();render()"></td>
+      <td class="c">${bd.length}</td><td class="n">${yen(bd.length*(+PZ().birdie||0))}</td></tr>
+    <tr><td colspan="3"><b>小計</b></td><td class="n"><b>${yen(P.birdie)}</b></td></tr>
+    </tbody></table>
+    ${Array.isArray(SC().par)&&SC().par.length===18?"":'<div class="hint">18ホールの内訳（各ホールのスコア）が無いと自動判定できません。</div>'}
+  </div>`;})():""}
   ${U("budget")?`<div class="card"><h2>収支</h2>
     <div class="hint">賞金の原資は <b>ひとり ${yen(BG().fee)}円 × ${feeMembers().length}名 ＝ ${yen(feeTotal())}円</b>。
       金額は「大会設定」の<b>「賞金の原資」</b>で変えられます。

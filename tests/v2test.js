@@ -53,6 +53,8 @@ const app = new Function(src + `
     buildSlides,render,go,sample,touch,tabList,
     RUN,VOT,FRAMES,inGroup,standings,hcOf,grossOf,coursePar,applyScores,scoreOf,SCset,
     get slides(){return slides}, get LS_OK(){return LS_OK},skillRows,feeTotal,settle,prizeTotal,sampleHard,holeWarn,frameCheck,collectPlan,dayToggle,tabAll,hiddenTabs,get TAB(){return TAB},prizeRows,
+    /* 2026-09-20：追加ルール（大波・小波・おしどり・早出・イーグル/バーディー・よくある賞プリセット） */
+    waveOf,startOf,birdieRows,birdieTotal,prizeOf,pzPreset,rankWinner,tieCmp,
     setPhase,PHASE,phOpen,useSet,flowSteps,nextStep,payToggle,get NEWTABS(){return NEWTABS},
     get FOLD(){return FOLD},payOnly,get PAYONLY(){return PAYONLY},yen,sideHtml,btmHtml,pageHead,resultText,copyResult,sideCount,foldSet,foldAll,foldOpen,goStep,netFix,scFocus,scoreCheck,tieWhy,SCset,BG,PZ,setLS:v=>{LS_OK=v},
     SD:()=>({paySettle:typeof paySettle==='function'?paySettle:null,payCover:typeof payCover==='function'?payCover:null,payWhy:typeof payWhy==='function'?payWhy:null,cancelOf:typeof cancelOf==='function'?cancelOf:null,cancelCard:typeof cancelCard==='function'?cancelCard:null,budget:typeof budget==='function'?budget:null,sideCount0:typeof sideCount0==='function'?sideCount0:null,scoreState:typeof scoreState==='function'?scoreState:null,scoreOf:typeof scoreOf==='function'?scoreOf:null}),
@@ -604,7 +606,7 @@ app.sample(); global.flush(); app.setPhase('prep'); app.go('meta');
   chk('大会設定には使っているルールの札', /<h2>追加ルール <small>11個を使っています/.test(P())&&/class="rl-c"/.test(P())
       &&/onclick="go\('rules'\)">追加ルールを変える →/.test(P())&&!/class="mod rcard/.test(P()));
   app.go('rules');
-  chk('ルールのカードが11枚', (P().match(/class="mod rcard/g)||[]).length===11, (P().match(/class="mod rcard/g)||[]).length);
+  chk('ルールのカードが12枚', (P().match(/class="mod rcard/g)||[]).length===12, (P().match(/class="mod rcard/g)||[]).length);
   chk('表彰式の飾り罫（.rule）と名前が重ならない', !/class="mod rule/.test(P()));
   chk('3つのまとまりに分ける', ['競技','予想ゲーム','賞とお金'].every(t=>P().includes('<div class="rule-gt">'+t+'</div>')));
   chk('使っている数を出す', /11個を使っています/.test(P()), (P().match(/\d+個を使っています/)||[''])[0]);
@@ -1004,7 +1006,7 @@ console.log('\n=== 入口（段階3：上の帯・ホーム・作成画面・大
     T('押すと選ばれ、段は変わらない', ()=>/class="mk-opt on" aria-pressed="true" onclick="SCset\('system','new'\)"/.test(P())&&S3.MKSTEP===2);
     app.SCset('system','double');
     X('mkStep',3);
-    T('3段目は追加ルールのカード', ()=>/STEP 3 \/ 3 ・ 任意/.test(P())&&(P().match(/class="mod rcard/g)||[]).length===11);
+    T('3段目は追加ルールのカード', ()=>/STEP 3 \/ 3 ・ 任意/.test(P())&&(P().match(/class="mod rcard/g)||[]).length===12);
     T('増える画面の数', ()=>/7個を使用中 → 画面が <b>＋7<\/b>/.test(P()), ()=>(P().match(/\d+個を使用中[^<]*<b>[^<]*/)||[''])[0]);
     app.useSet('lucky',true);
     T('発表の画面だけ増えるルールは画面の数を変えない', ()=>/8個を使用中 → 画面が <b>＋7<\/b>/.test(P()));
@@ -1453,6 +1455,113 @@ console.log('\n=== 当日と結果（段階5：スコア入力P7・順位・表�
     const O=app.blank(); app.setDB(O); app.setPhase('award'); app.go('rank');
     T('まだ誰も入っていなければそう出す', ()=>/<span class="r-cnt">入力済み 0 \/ 0名<\/span>/.test(P())&&/スコアを入れると、ネットの順位がここに並びます。/.test(P()));
   }
+  app.sample(); global.flush(); app.setPhase('prep');
+}
+
+console.log('\n=== 追加ルール（2026-09-20：大波・小波・おしどり・早出・イーグル・バーディー・よくある賞プリセット） ===');
+/* 設計書「競技定義プラグイン化_設計書」§10 の実装分。サンプルデータ（sample()）の
+   18ホールの内訳から、期待値を事前に計算して固定している（tests/ とは別に一度だけ計算した） */
+{
+  const P=()=>store['pane'].innerHTML;
+  const T=(l,f,x)=>{let v,e='';try{v=f();}catch(err){v=false;e=String(err&&err.message||err);}chk(l,!!v,e||(typeof x==='function'?(()=>{try{return x();}catch(_){return '';}})():x||''));};
+  app.sample(); global.flush(); app.setPhase('award'); app.useSet('birdie',true);
+
+  console.log('  -- 大波・小波・おしどり・早出（rankWinner） --');
+  const st=app.standings();
+  T('大波賞：前半・後半の差が最大の人（同差は並び順）', ()=>app.rankWinner({kind:'bigWave'},st)==='川口　亮', ()=>app.rankWinner({kind:'bigWave'},st));
+  T('小波賞：前半・後半の差が最小の人', ()=>app.rankWinner({kind:'smallWave'},st)==='上田　直樹', ()=>app.rankWinner({kind:'smallWave'},st));
+  T('おしどり賞：前半・後半が同スコアの人だけが対象', ()=>app.rankWinner({kind:'pair'},st)==='上田　直樹', ()=>app.rankWinner({kind:'pair'},st));
+  T('早出賞：最初の組の人（同時刻は並び順）', ()=>app.rankWinner({kind:'earliest'},st)==='青木　健一', ()=>app.rankWinner({kind:'earliest'},st));
+  T('18ホールの内訳が欠けている人は大波・小波の対象外（null）', ()=>{
+    const p=app.DB().players.find(x=>x.n==='青木　健一'), s=app.scoreOf(p.n), save=s.h[10];
+    delete s.h[10]; const v=app.waveOf(p); s.h[10]=save; return v===null;
+  });
+  T('組の時刻が空なら早出の対象外（null）', ()=>{
+    const p=app.DB().players[0], g=app.DB().groups.find(x=>x.no===+p.g), save=g.time;
+    g.time=''; const v=app.startOf(p); g.time=save; return v===null;
+  });
+
+  console.log('  -- イーグル・バーディー賞（birdieRows・自動判定） --');
+  T('イーグル3件・バーディー24件・計27件（サンプルの18ホールから自動集計）', ()=>{
+    const r=app.birdieRows();
+    return r.length===27&&r.filter(x=>x.label==='イーグル').length===3&&r.filter(x=>x.label==='バーディー').length===24;
+  }, ()=>app.birdieRows().length);
+  T('ホール番号の昇順に並ぶ', ()=>{const r=app.birdieRows(); return r.length>0&&r.every((x,i)=>i===0||x.hole>=r[i-1].hole);});
+  T('2番のバーディーは上田直樹だけ（同ホール内の並びも確認）', ()=>{
+    const r=app.birdieRows().filter(x=>x.hole===2);
+    return r.length===1&&r[0].n==='上田　直樹'&&r[0].label==='バーディー';
+  });
+  T('コースのパーが18ホール分そろっていなければ何も出さない', ()=>{
+    const sc=app.DB().meta.sc, save=sc.par; sc.par=[4,4,3]; const v=app.birdieRows(); sc.par=save; return v.length===0;
+  });
+  T('対象ホールを決め打ちしない（ニアピン・ドラコンと違い holeWant 等の指定が無くても出る）', ()=>app.birdieRows().length>0);
+
+  console.log('  -- イーグル・バーディー賞（お金の集計） --');
+  T('単価×件数が合計に入る（イーグル3件・バーディー24件）', ()=>{
+    const pt=app.prizeTotal();
+    return pt.birdie===3*(+app.PZ().eagle||0)+24*(+app.PZ().birdie||0)&&pt.all>=pt.birdie;
+  });
+  T('トグルを切ると賞金合計から外れる', ()=>{
+    const on=app.prizeTotal().all; app.useSet('birdie',false); const off=app.prizeTotal().all; app.useSet('birdie',true);
+    return on>off&&off===on-app.prizeTotal().birdie;
+  });
+  T('該当者の受賞額にも入る（イーグルを打った青木健一）', ()=>{
+    app.useSet('birdie',true); const on=app.prizeOf('青木　健一'); app.useSet('birdie',false);
+    const off=app.prizeOf('青木　健一'); app.useSet('birdie',true); return on>off;
+  });
+
+  console.log('  -- よくある賞プリセット（pzPreset） --');
+  {
+    const rank=app.PZ().rank; rank.length=0;
+    rank.push({label:"優勝",kind:"rank",n:1,amt:10000});
+    app.pzPreset();
+    T('1回目は5件（猛打賞・ブービー賞・ブービーメーカー賞・ベストドレッサー賞・珍プレー賞）が増える',
+      ()=>rank.length===6&&['猛打賞','ブービー賞','ブービーメーカー賞','ベストドレッサー賞','珍プレー賞'].every(l=>rank.some(r=>r.label===l)));
+    T('ブービー賞は「下から数えて2」（既存の順位賞エンジンをそのまま使う）',
+      ()=>rank.find(r=>r.label==='ブービー賞').kind==='last'&&rank.find(r=>r.label==='ブービー賞').n===2);
+    const AL=[]; const al0=global.alert; global.alert=m=>AL.push(m);
+    app.pzPreset();
+    global.alert=al0;
+    T('2回目は同じ名前があるので増やさない（重複防止）', ()=>rank.length===6);
+    T('2回目は「追加できるものがありません」と知らせる', ()=>AL.some(m=>/追加できるものがありません/.test(m)), ()=>AL.join('/'));
+  }
+  app.sample(); global.flush();
+
+  console.log('  -- 画面：追加ルールの一覧（rules） --');
+  app.go('rules');
+  T('「イーグル・バーディー賞」が競技グループに並ぶ', ()=>/<b>イーグル・バーディー賞<\/b>/.test(P()));
+  T('対象ホールを決め打ちしないことを一言で説明', ()=>/対象ホールを決めずに自動判定。手入力は不要/.test(P()));
+  T('選ぶと「順位・表彰に一覧が増える」と分かる', ()=>/順位・表彰に一覧が増える（18ホールの内訳が無いと出ません）/.test(P()));
+  T('既定ではオフ（新しい賞なので、既存の大会には影響しない）', ()=>!app.DB().meta.use.birdie);
+
+  console.log('  -- 画面：賞金（money） --');
+  app.useSet('birdie',true); app.go('money');
+  T('順位賞カードに「よくある賞をまとめて追加」ボタンがある', ()=>/<button class="btn ghost" onclick="pzPreset\(\)">よくある賞をまとめて追加<\/button>/.test(P()));
+  T('大波・小波・おしどり・早出が「決め方」の選択肢に増えている', ()=>/大波（前後半の差が最大）/.test(P())&&/小波（前後半の差が最小）/.test(P())&&/おしどり（前後半が同スコア）/.test(P())&&/早出（組のスタートが最速）/.test(P()));
+  T('バーディー・イーグル賞カードが単価入力つきで出る', ()=>/<h2>バーディー・イーグル賞 <small>18ホールの内訳から自動判定・対象ホールの指定は不要<\/small><\/h2>/.test(P())
+    &&/onchange="PZ\(\)\.eagle=\+this\.value\|\|0;touch\(\);render\(\)"/.test(P())
+    &&/onchange="PZ\(\)\.birdie=\+this\.value\|\|0;touch\(\);render\(\)"/.test(P()));
+  T('イーグル3件・バーディー24件の内訳を出す', ()=>{
+    const card=P().split('バーディー・イーグル賞')[1]||'';
+    return /<td class="c">3<\/td>/.test(card)&&/<td class="c">24<\/td>/.test(card);
+  });
+  app.useSet('birdie',false);
+  T('使わない設定にすればカードごと消える', ()=>!/バーディー・イーグル賞/.test(P()));
+  app.useSet('birdie',true);
+
+  console.log('  -- 画面：賞金の原資（prizeSourceCard・大会設定の中） --');
+  app.go('meta');
+  T('原資の内訳に「バーディー・イーグル」の行が出る', ()=>/バーディー・イーグル[\s\S]{0,80}イーグル [\d,]+　\/　バーディー [\d,]+/.test(P()));
+
+  console.log('  -- 画面：順位・表彰（r-bd カード） --');
+  app.go('rank');
+  T('イーグル・バーディーの一覧カードが出る（27件）', ()=>/<div class="card r-bd"><h2>イーグル・バーディー <small>27件<\/small><\/h2>/.test(P()));
+  T('1件ごとに「◯番 ラベル」と受賞者名', ()=>/<li><span>4番 イーグル<\/span><b>青木　健一<\/b><\/li>/.test(P())&&/<li><span>2番 バーディー<\/span><b>上田　直樹<\/b><\/li>/.test(P()));
+  T('賞金合計の内訳に「バーディー・イーグル」を添える', ()=>/順位賞 [\d,]+ ・ 技能賞 [\d,]+ ・ バーディー・イーグル [\d,]+/.test(P()));
+  app.useSet('birdie',false);
+  T('使わなければ一覧カードも出さない', ()=>!/class="card r-bd"/.test(P()));
+  app.useSet('birdie',true);
+
   app.sample(); global.flush(); app.setPhase('prep');
 }
 

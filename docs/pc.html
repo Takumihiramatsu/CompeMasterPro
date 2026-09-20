@@ -155,6 +155,10 @@ body.showing #show{display:grid} body.showing #work{display:none}
 .combo{display:flex;align-items:center;justify-content:center;gap:clamp(10px,2.4vw,34px);margin:1vmin 0}
 .big-no{width:clamp(80px,13vw,180px);height:clamp(80px,13vw,180px);border-radius:6px;display:grid;place-items:center;
   font-family:var(--num);font-weight:700;font-size:clamp(38px,7.6vw,106px);line-height:1;box-shadow:0 12px 44px rgba(0,0,0,.5)}
+/* 2026-09-20：馬連の当選発表用。氏名は枠番より長いので、正方形ではなく横長の箱にする */
+.big-no.txt{width:auto;min-width:clamp(140px,22vw,300px);height:clamp(64px,9vw,110px);border-radius:10px;
+  font-family:var(--jp);font-weight:700;font-size:clamp(20px,3.4vw,40px);line-height:1.15;padding:0 3vmin;
+  background:var(--panel-2);color:var(--brass);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .dash{font-size:clamp(32px,5.6vw,80px);color:var(--brass);font-family:var(--num)}
 .rolling .big-no{animation:shk .09s infinite}
 @keyframes shk{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
@@ -1370,7 +1374,7 @@ const blank=()=>({
   meta:{name:"第1回 ゴルフコンペ",place:"",date:"",
         groupSize:4,
         use:{score:true,near:true,nearAny:false,drako:true,birdie:false,keiba:true,gto:true,fine:false,prize:true,budget:true,team:false,lucky:false},
-        kPrice:200,gPrice:500,gMode:"3連複",frameMode:"group",
+        kPrice:200,gPrice:500,gMode:"3連複",frameMode:"group",kMode:"枠連",
         fineUnit:1000,fineTop:3,
         nearHoles:[4,7,12,16],nearAnyHoles:[2,11],drakoHoles:[5,14],
         sc:{system:"double",
@@ -1428,6 +1432,8 @@ const FC=n=>!n?{bg:"#4A5A52",fg:"#F2EFE6"}
   :(JRA[n]?{bg:JRA[n][0],fg:JRA[n][1]}:{bg:"hsl("+(n*53%360)+" 52% 42%)",fg:"#fff"});
 const chip=f=>`<span class="chip" style="background:${FC(f).bg};color:${FC(f).fg}">${f||"—"}</span>`;
 const ck=(a,b)=>Math.min(a,b)+"-"+Math.max(a,b);
+/* 2026-09-20：馬連（氏名2名の組合せ、順不同）の的中判定キー。枠連の ck() の氏名版 */
+const ckN=(a,b)=>[nz(a),nz(b)].sort().join("／");
 
 /* ---- 自動保存 ---- */
 const LSKEY="golfCompe.autosave.v2";
@@ -2130,6 +2136,16 @@ const payDiffLab=x=>x.diff>0?"追加で "+yen(x.diff)+"円":"お返し "+yen(-x.
    入力の時点で弾いているので普通は出ない。旧版データの移行・ファイルの読み込み・
    スマホからの受け渡し、および投票の後で出走を取り消した場合に生じうる。 */
 function kVoid(r){
+  /* 2026-09-20：馬連（氏名2名、順不同）は枠ではなく出走者そのものを見る。GTOの gVoid と同じ考え方 */
+  if(DB.meta.kMode==="馬連"){
+    if(!RUN().length)return "";
+    const a=nz(r.a),b=nz(r.b);
+    if(!a||!b)return "指名が2名そろっていません";
+    if(a===b)return "同じ人を2回指名しています";
+    const out=[r.a,r.b].filter(n=>!RUN().some(x=>nz(x.n)===nz(n)));
+    if(out.length)return "出走しない方を指名しています（"+out.join("、")+"）";
+    return "";
+  }
   const F=FRAMES();
   if(!F.length)return "";
   if(!F.includes(+r.a)||!F.includes(+r.b))return "無くなった枠を指名しています";
@@ -2147,7 +2163,10 @@ function gVoid(r){
 function calcK(){
   const bad=DB.keiba.filter(r=>kVoid(r)),live=DB.keiba.filter(r=>!kVoid(r));
   const units=live.reduce((s,r)=>s+(+r.q||0),0), sales=units*(+DB.meta.kPrice||0);
-  const hits=live.filter(r=>ck(r.a,r.b)===DB.result.frame);
+  /* 2026-09-20：馬連は枠ではなく、上位2名の氏名の組合せ（順不同）で的中を判定する */
+  const hits=DB.meta.kMode==="馬連"
+    ?live.filter(r=>DB.result.top2.filter(Boolean).length===2&&ckN(r.a,r.b)===ckN(DB.result.top2[0],DB.result.top2[1]))
+    :live.filter(r=>ck(r.a,r.b)===DB.result.frame);
   const win=hits.reduce((s,r)=>s+(+r.q||0),0), pay=win>0?fl(sales/win):0;
   const by={};hits.forEach(r=>by[r.v]=(by[r.v]||0)+(+r.q||0));
   const bb={};bad.forEach(r=>bb[r.v]=(bb[r.v]||0)+(+r.q||0)*(+DB.meta.kPrice||0));
@@ -2323,7 +2342,8 @@ function flowSteps(){
     const noT=gsU.filter(g=>!nz((DB.groups.find(x=>+x.no===g)||{}).time)).length;
     add("prep","groups","スタート時刻を入れる", gsU.length&&!noT, noT?"残り"+noT+"組":"",
         "組合せの画面で最初の時刻と間隔を入れ、「全組に時刻を入れる」を押すとそろって入ります","g-start"); }
-  if(U("keiba")){ const nf=plays.filter(p=>+p.g>0&&!(+p.f>0));
+  /* 2026-09-20：馬連は氏名だけで買うので、枠を決めるチェック項目は枠連のときだけ出す */
+  if(U("keiba")&&DB.meta.kMode!=="馬連"){ const nf=plays.filter(p=>+p.g>0&&!(+p.f>0));
     add("prep","players","馬券の枠を決める", FRAMES().length&&!nf.length,
         nf.length?"残り"+nf.length+"名":"",
         "参加者タブの「枠を2人ずつ割り振る」で、組をまたいで実力をそろえた枠が作れます",
@@ -2718,7 +2738,7 @@ function newCompe(){
 /* 引き継ぐもの：使うルール・競技方法とコース・技能賞のホール・予想ゲームの単価と方式・罰金・
    賞の金額・団体賞・抽選賞・集める額の決め方・会場・登録済みのコース。
    引き継がないもの：大会名（回数だけ進める）・開催日・参加者・組・予想・スコア・結果・集金の記録・収支の実績 */
-const COPYKEYS=["place","groupSize","use","kPrice","gPrice","gMode","frameMode","fineUnit","fineTop",
+const COPYKEYS=["place","groupSize","use","kPrice","gPrice","gMode","kMode","frameMode","fineUnit","fineTop",
   "nearHoles","nearAnyHoles","drakoHoles","sc","prizes","team","lucky"];
 function copyRules(d){
   const s=d.meta, m=DB.meta, cp=v=>JSON.parse(JSON.stringify(v));
@@ -3408,10 +3428,14 @@ function vMeta(){
      `${U("keiba")?`<h3 class="fold-h3">馬券</h3>
     <div class="row">
       <div class="f"><label>単価（円／口）</label><input type="number" value="${m.kPrice}" oninput="DB.meta.kPrice=+this.value||0;touch()"></div>
+      <div class="f"><label>券種</label><select onchange="M('kMode',this.value)">
+        <option value="枠連" ${m.kMode!=="馬連"?"selected":""}>枠連（上位2名が入る枠を当てる）</option>
+        <option value="馬連" ${m.kMode==="馬連"?"selected":""}>馬連（上位2名の組み合わせを当てる）</option></select></div>
+      ${m.kMode==="馬連"?'<span class="hint">馬連は氏名を直接2名選びます。枠（組・実力）の設定は使いません。</span>':`
       <div class="f"><label>枠の作り方</label><select onchange="M('frameMode',this.value)">
         <option value="group" ${m.frameMode==="group"?"selected":""}>組と同じにする</option>
         <option value="manual" ${m.frameMode==="manual"?"selected":""}>自分で決める</option></select></div>
-      <span class="hint">「組と同じ」にすると、組み合わせを決めた時点で枠が自動で決まります。</span>
+      <span class="hint">「組と同じ」にすると、組み合わせを決めた時点で枠が自動で決まります。</span>`}
     </div>`:""}${U("gto")?`<h3 class="fold-h3">GTO</h3>
     <div class="row">
       <div class="f"><label>単価（円／口）</label><input type="number" value="${m.gPrice}" oninput="DB.meta.gPrice=+this.value||0;touch()"></div>
@@ -4650,8 +4674,10 @@ function resultStale(){
   if(U("keiba")&&st.net.length>=2){
     const t=[st.net[0].n,st.net[1].n];
     if(DB.result.top2.join("|")!==t.join("|")) out.push("馬券の上位2名");
-    const p1=RUN().find(p=>p.n===t[0]),p2=RUN().find(p=>p.n===t[1]);
-    if(p1&&p2&&DB.result.frame!==ck(+p1.f,+p2.f)) out.push("馬券の当選枠");
+    if(DB.meta.kMode!=="馬連"){
+      const p1=RUN().find(p=>p.n===t[0]),p2=RUN().find(p=>p.n===t[1]);
+      if(p1&&p2&&DB.result.frame!==ck(+p1.f,+p2.f)) out.push("馬券の当選枠");
+    }
   }
   if(U("gto")&&st.worst3.length>=3&&DB.result.low.join("|")!==st.worst3.map(r=>r.n).join("|")) out.push("GTOの下位3名");
   if((U("gto")||U("fine"))&&st.rows.some(r=>r.g!==null&&+DB.result.gross[r.n]!==r.g)) out.push("罰金のグロス");
@@ -4662,8 +4688,10 @@ function applyScores(){
   if(!st.net.length){alert("スコアが足りません。");return;}
   if(U("keiba")&&st.net.length>=2){
     DB.result.top2=[st.net[0].n,st.net[1].n];
-    const p1=RUN().find(p=>p.n===st.net[0].n),p2=RUN().find(p=>p.n===st.net[1].n);
-    if(p1&&p2) DB.result.frame=ck(+p1.f,+p2.f);
+    if(DB.meta.kMode!=="馬連"){
+      const p1=RUN().find(p=>p.n===st.net[0].n),p2=RUN().find(p=>p.n===st.net[1].n);
+      if(p1&&p2) DB.result.frame=ck(+p1.f,+p2.f);
+    }
   }
   if(U("gto")&&st.worst3.length>=3) DB.result.low=st.worst3.map(r=>r.n);
   st.rows.forEach(r=>{if(r.g!==null) DB.result.gross[r.n]=r.g;});
@@ -4677,11 +4705,19 @@ function applyScores(){
      GTO ：人のボタンを押した順に 最下位 → 下位2位 → 下位3位
    選んだ枠・人・口数・投票者はファイルに残さない。締め切ると入力を止め、解除もできる（4.9の決定3）。
    kAdd・gAdd は従来どおり ka_*・ga_* の欄から読む（選んだものは隠し欄に入れる） */
-let BTAB="k", BSEL=[], GSEL=[], BV="", BQ=1, BPASTE=false;
+let BTAB="k", BSEL=[], KSEL=[], GSEL=[], BV="", BQ=1, BPASTE=false;
 function betsTab(k){ BTAB=k; render(); }
 function bFrame(f){
   if(BSEL.length>=2) BSEL=[];
   BSEL.push(+f); render();
+}
+/* 2026-09-20：馬連の2名選び。押した人をもう一度押すと外れる（枠連の「もう一度押すとゾロ目」とは違い、
+   同じ人を2回選ぶことはできないため） */
+function bPerson(n){
+  const i=KSEL.indexOf(n);
+  if(i>=0){ KSEL.splice(i,1); render(); return; }
+  if(KSEL.length>=2) KSEL=[];
+  KSEL.push(n); render();
 }
 function gPick(n){
   const i=GSEL.indexOf(n);
@@ -4689,7 +4725,7 @@ function gPick(n){
   render();
 }
 function bQty(d){ BQ=Math.max(1,(+BQ||1)+d); render(); }
-function bClear(){ BSEL=[]; GSEL=[]; render(); }
+function bClear(){ BSEL=[]; KSEL=[]; GSEL=[]; render(); }
 const betsLocked=()=>{
   if(!DB.meta.betsClosed) return false;
   alert("予想は締め切っています。直すときは「解除」を押してください。");
@@ -4720,6 +4756,14 @@ function kGrid(o){
       return `<td class="${cls}" ${c&&!hit?`style="background:rgba(217,177,102,${(c/mx*.5).toFixed(2)})"`:""}>${c||"·"}</td>`;
     }).join("")}</tr>`).join("")}</tbody></table>`;
 }
+/* 2026-09-20：馬連の人気（口数の多い組合せ順）。枠は8通り程度で総当たりの表が組めるが、
+   個人は16名なら120通りにもなり表では見づらいため、GTOの「得票の多い方」と同じ考え方の
+   ランキング一覧にする */
+function kPairVotes(){
+  const cnt={};
+  DB.keiba.forEach(r=>{if(kVoid(r))return;const k=ckN(r.a,r.b);cnt[k]=(cnt[k]||0)+(+r.q||0);});
+  return Object.entries(cnt).map(([k,c])=>({k,c,names:k.split("／")})).sort((a,b)=>b.c-a.c);
+}
 /* 未投票の方。馬券とGTOでそれぞれ数える */
 function betsWait(list){
   const who=new Set(list.map(r=>nz(r.v)));
@@ -4727,7 +4771,7 @@ function betsWait(list){
 }
 function vBets(){
   const m=DB.meta, closed=!!m.betsClosed, dis=closed?" disabled":"";
-  const tabs=[U("keiba")&&["k","馬券（枠連）",DB.keiba,calcK().badUnits],U("gto")&&["g","GTO（下位予想）",DB.gto,calcG().badUnits]].filter(Boolean);
+  const tabs=[U("keiba")&&["k","馬券（"+(m.kMode==="馬連"?"馬連":"枠連")+"）",DB.keiba,calcK().badUnits],U("gto")&&["g","GTO（下位予想）",DB.gto,calcG().badUnits]].filter(Boolean);
   if(!tabs.some(([k])=>k===BTAB)) BTAB=(tabs[0]||["k"])[0];
   const V=VOT(); if(!V.some(p=>p.n===BV)) BV=(V[0]||{}).n||"";
   const vo=V.map(p=>`<option${p.n===BV?" selected":""}>${esc(p.n)}</option>`).join("");
@@ -4740,7 +4784,7 @@ function vBets(){
       :`<button class="btn primary" onclick="betsClose(true)">締め切る</button>`}
   </div>
   ${closed?`<div class="msg warn no-print">予想を締め切りました${m.betsClosedAt?"（"+esc(m.betsClosedAt)+"）":""}。追加・口数の変更・削除・貼り付けはできません。直すときは「解除」を押してください。</div>`:""}
-  ${!FRAMES().length&&BTAB==="k"?'<div class="msg ng">枠がありません。「組み合わせ」タブで組を割り当ててください。</div>':""}`;
+  ${m.kMode!=="馬連"&&!FRAMES().length&&BTAB==="k"?'<div class="msg ng">枠がありません。「組み合わせ」タブで組を割り当ててください。</div>':""}`;
   const wait=L=>{const w=betsWait(L);
     return `<div class="b-foot"><span>${L.length}件</span><span>${w.length?"未投票 "+w.length+"名："+w.slice(0,6).map(esc).join("・")+(w.length>6?" ほか":""):"全員が投票しました"}</span></div>`;};
   const qty=id=>`<div class="b-qty"><button onclick="bQty(-1)" aria-label="1口減らす"${dis}>−</button>
@@ -4750,7 +4794,46 @@ function vBets(){
     <button class="btn" onclick="${fn}()"${dis}>読み取る</button>
     <div class="hint">${hint}</div><div id="${pv}"></div></details>`;
   let L="", R="";
-  if(BTAB==="k"){
+  if(BTAB==="k"&&m.kMode==="馬連"){
+    /* 2026-09-20：馬連（氏名2名の組合せ、順不同）。枠連の「枠グリッド」の代わりに、
+       GTOの人選びと同じ「氏名ボタン一覧」から2名を選ぶ */
+    const ru=RUN(), a=KSEL[0]||"", b=KSEL[1]||"", both=a&&b;
+    L=`<div class="card b-pick no-print"><h2>2名の組合せ <small>2名選ぶ（同じ人をもう一度押すと外れます）</small></h2>
+      <div class="b-people">${ru.map(p=>{const i=KSEL.indexOf(p.n);
+        return `<button class="b-p${i>=0?" on":""}" onclick="bPerson('${esc(p.n)}')" aria-pressed="${i>=0}"${dis}>${i>=0?`<em>${i+1}</em>`:""}<b>${esc(p.n)}</b><small>${+p.g?p.g+"組":""}</small></button>`;}).join("")}</div>
+      <input type="hidden" id="ka_a" value="${esc(a)}"><input type="hidden" id="ka_b" value="${esc(b)}">
+      <div class="b-row">
+        <div class="f"><label>投票者</label><select id="ka_v" style="min-width:145px" onchange="BV=this.value"${dis}>${vo}</select></div>
+        <div class="f"><label>口数</label>${qty("ka_q")}</div>
+        <button class="btn primary b-add" onclick="kAdd()"${both&&!closed?"":" disabled"}>${both?esc(a)+"・"+esc(b)+" を追加（Enter）":"2名選んでください"}</button>
+        <span class="hint" id="ka_msg"></span>
+      </div></div>
+    <div class="card"><h2>馬券（馬連） <small>同じ買い目は口数でまとめます</small></h2>
+    <table><thead><tr><th style="min-width:10.5em">投票者</th><th style="min-width:13em">買い目</th><th class="c" style="width:88px">口数</th>
+      <th class="n" style="width:96px">金額</th><th class="c" style="width:46px"></th></tr></thead><tbody>
+    ${DB.keiba.length?DB.keiba.map((r,i)=>{const bad=kVoid(r);return `<tr class="zebra"><td>${esc(r.v)}${
+        bad?'<br><small class="warn">無効：'+esc(bad)+"</small>":""}</td>
+      <td>${esc(r.a)} ・ ${esc(r.b)}</td>
+      <td class="c"><input class="q" type="number" min="1" value="${r.q}" onchange="kQ(${i},this.value)"${dis}></td>
+      <td class="n" ${bad?'style="text-decoration:line-through;color:var(--ink-dim)"':""}>${yen(r.q*m.kPrice)}</td>
+      <td class="c">${closed?"":`<button class="del" onclick="kDel(${i})">×</button>`}</td></tr>`;}).join("")
+      :'<tr><td colspan="5">まだ投票がありません。上の欄で選んで「追加」を押してください。</td></tr>'}
+    </tbody></table>
+    ${wait(DB.keiba)}
+    <div class="stat-row"><div>口数<b>${K.units}</b></div><div>売上金<b class="hi">${yen(K.sales)}円</b></div>
+      ${K.badUnits?`<div>無効<b class="warn">${K.badUnits}口 / ${yen(K.badTotal)}円 返金</b></div>`:""}
+      <div>行数<b>${DB.keiba.length}</b></div></div></div>
+    ${paste("kp","kPaste","kpv","山田　太郎&#9;鈴木　一郎&#9;佐々木　花子&#9;2",
+      "「氏名・買い目2名・口数」の並び。<b>氏名の順番は問いません</b>（順不同）。口数を省くと1口。")}`;
+    const pv=kPairVotes();
+    R=`<div class="card b-pop"><h2>組合せの人気 <small>口数の多い順</small></h2>
+      <ol class="b-votes">${pv.slice(0,6).map(x=>`<li><span>${x.names.map(esc).join("・")}</span><b>${x.c}</b></li>`).join("")||"<li><span>まだ投票がありません</span></li>"}</ol>
+      ${both?`<p class="hb-p">いま選んでいる ${esc(a)}・${esc(b)} は ${(pv.find(x=>x.k===ckN(a,b))||{c:0}).c}口。</p>`:""}</div>
+    <div class="card b-sales"><h2>馬券（馬連） 売上</h2><b>${yen(K.sales)}<em>円</em></b><span>${K.units}口 × ${yen(m.kPrice)}円。当選の組合せの口数で等分します。</span>
+      ${K.badUnits?`<span class="warn">無効 ${K.badUnits}口（${yen(K.badTotal)}円）は返金</span>`:""}</div>
+    ${U("gto")?`<div class="card b-prog"><h2>GTO の進み <small>${V.length-betsWait(DB.gto).length} / ${V.length}</small></h2>
+      <p class="hb-p">必ず「最下位 → 下位2位 → 下位3位」の順に選びます。上の切替で GTO へ。</p></div>`:""}`;
+  }else if(BTAB==="k"){
     const F=FRAMES(), a=BSEL[0]||0, b=BSEL[1]||0, both=a&&b;
     const nm=f=>{const x=inFrame(f); return x.length?esc(String(x[0]).split(/[\s\u3000]/)[0])+(x.length>1?" ほか"+(x.length-1)+"名":""):"—";};
     L=`<div class="card b-pick no-print"><h2>枠の組合せ <small>2つ選ぶ（同じ枠をもう一度押すとゾロ目）</small></h2>
@@ -4888,6 +4971,25 @@ function parseKeiba(text){
       why:!voter?"投票者が名簿にありません":(a===null?"枠番が読めません":(a>maxF||b>maxF?"枠番が範囲外です":""))};
   });
 }
+/* 2026-09-20：馬連の貼り付け解析。氏名を3つ拾い、最初を投票者、残り2つを買い目とする
+   （GTOの parseGto と同じ考え方。買い目は順不同なので順番は気にしない） */
+function parseKeibaPair(text){
+  return tidy(text).split(/\r?\n/).map(l=>l.trim()).filter(Boolean).map(line=>{
+    const all=nameHitsAll(line,DB.players);
+    const voter=all.length?all[0].n:"";
+    const picks=all.slice(1,3).map(x=>x.n);
+    const okV=!!voter&&VOT().some(p=>nz(p.n)===nz(voter));
+    const okP=picks.length===2&&picks.every(n=>RUN().some(p=>nz(p.n)===nz(n)))
+              &&new Set(picks.map(nz)).size===2;
+    const nums=(line.match(/\d+/g)||[]).map(Number).filter(v=>v>=1&&v<=99);
+    const q=nums.length?nums[nums.length-1]:1;
+    return {line,voter,a:picks[0]||"",b:picks[1]||"",q,ok:okV&&okP,
+      why:!okV?"投票者が名簿にありません":
+        (picks.length<2?"買い目が2名そろっていません":
+         (new Set(picks.map(nz)).size<2?"同じ人を2回指名しています":
+          (!okP?"出走しない方が指名されています":"")))};
+  });
+}
 function parseGto(text){
   return tidy(text).split(/\r?\n/).map(l=>l.trim()).filter(Boolean).map(line=>{
     const all=nameHitsAll(line,DB.players);
@@ -4925,21 +5027,24 @@ function pvTable(rows,cols){
 }
 function kPaste(){
   if(betsLocked()) return;
-  KPV=parseKeiba(document.getElementById("kp").value);
+  const uma=DB.meta.kMode==="馬連";
+  KPV=(uma?parseKeibaPair:parseKeiba)(document.getElementById("kp").value);
   const n=KPV.filter(r=>r.ok).length,q=KPV.filter(r=>r.ok).reduce((a,b)=>a+b.q,0);
   document.getElementById("kpv").innerHTML=
     `<div class="msg ${n?"ok":"ng"}">${n}行・${q}口を読み取りました${KPV.length-n?"（"+(KPV.length-n)+"行は取り込めません）":""}。</div>`
-    +pvTable(KPV,[["投票者",r=>esc(r.voter||"—")],["買い目",r=>r.a?chip(r.a)+chip(r.b)+r.a+"-"+r.b:"—",' class="c"'],
+    +pvTable(KPV,[["投票者",r=>esc(r.voter||"—")],["買い目",r=>uma?(r.a?esc(r.a)+" ・ "+esc(r.b):"—"):(r.a?chip(r.a)+chip(r.b)+r.a+"-"+r.b:"—"),' class="c"'],
       ["口数",r=>r.q,' class="c"']])
     +(n?`<div class="row" style="margin-top:11px"><button class="btn primary" onclick="kPasteApply()">この内容で取り込む</button>
       <button class="btn ghost" onclick="document.getElementById('kpv').innerHTML=''">やめる</button></div>`:"");
 }
 function kPasteApply(){
   if(betsLocked()) return;
+  const uma=DB.meta.kMode==="馬連";
+  const key=r=>uma?ckN(r.a,r.b):ck(r.a,r.b);
   let n=0,mg=0;
   KPV.forEach(r=>{
     if(!r.ok)return;
-    const ex=DB.keiba.find(x=>x.v===r.voter&&ck(x.a,x.b)===ck(r.a,r.b));
+    const ex=DB.keiba.find(x=>x.v===r.voter&&key(x)===key(r));
     if(ex){ex.q+=r.q;mg++;}else DB.keiba.push({v:r.voter,a:r.a,b:r.b,q:r.q});
     n+=r.q;
   });
@@ -4971,7 +5076,18 @@ function gPasteApply(){
 }
 function kAdd(){
   if(betsLocked()) return;
-  const v=ka_v.value,a=+ka_a.value,b=+ka_b.value,q=Math.max(1,+ka_q.value||1);
+  const v=ka_v.value,q=Math.max(1,+ka_q.value||1);
+  if(DB.meta.kMode==="馬連"){
+    const a=ka_a.value,b=ka_b.value;
+    if(!(a&&b)){ka_msg.textContent="2名選んでください";return;}
+    if(!v){ka_msg.textContent="投票者を選んでください";return;}
+    const ex=DB.keiba.find(r=>r.v===v&&ckN(r.a,r.b)===ckN(a,b));
+    if(ex){ex.q+=q;ka_msg.textContent=`同じ買い目があったので ${ex.q}口 にまとめました`;}
+    else{DB.keiba.push({v,a,b,q});ka_msg.textContent="";}
+    BV=v; KSEL=[]; BQ=1; touch();render();ka_v.value=v;
+    return;
+  }
+  const a=+ka_a.value,b=+ka_b.value;
   if(!(a>0&&b>0)){ka_msg.textContent="枠を2つ選んでください";return;}
   if(!v){ka_msg.textContent="投票者を選んでください";return;}
   const ex=DB.keiba.find(r=>r.v===v&&ck(r.a,r.b)===ck(a,b));
@@ -4999,9 +5115,13 @@ function gDel(i){if(betsLocked())return;DB.gto.splice(i,1);touch();render();}
 /* ---- 集計 ---- */
 function vSum(){
   const K=calcK(),G=calcG(),V=votes(),L=ledger();
+  const uma=DB.meta.kMode==="馬連";
+  /* 2026-09-20：馬連は枠のマス目表が使えないので、予想入力と同じ「組合せの人気」一覧にする */
+  const kPop=(()=>{const pv=kPairVotes(),hk=DB.result.top2.filter(Boolean).length===2?ckN(DB.result.top2[0],DB.result.top2[1]):"";
+    return `<ol class="b-votes">${pv.slice(0,8).map(x=>`<li${x.k===hk?' class="hitc"':""}><span>${x.names.map(esc).join("・")}</span><b>${x.c}</b></li>`).join("")||"<li><span>まだ投票がありません</span></li>"}</ol>`;})();
   pane.innerHTML=`
-  ${U("keiba")?`<div class="card"><h2>馬券の人気 <small>マス目の数字は口数。当選の組合せに印（予想入力の画面にも同じ表）</small></h2>
-    ${kGrid({hit:DB.result.frame})}
+  ${U("keiba")?`<div class="card"><h2>馬券の人気 <small>${uma?"口数の多い組合せ順。当選の組合せに印":"マス目の数字は口数。当選の組合せに印（予想入力の画面にも同じ表）"}</small></h2>
+    ${uma?kPop:kGrid({hit:DB.result.frame})}
     <div class="stat-row"><div>馬券<b>${K.units}口 / ${yen(K.sales)}円</b></div>
       <div>GTO<b>${G.units}口 / ${yen(G.sales)}円</b></div>
       <div>回収総額<b class="hi">${yen(K.allSales+G.allSales)}円</b></div></div></div>`:""}
@@ -5011,7 +5131,7 @@ function vSum(){
       <th class="c" style="width:66px">口数</th><th class="n" style="min-width:6em">返金</th>
       <th style="min-width:14em">理由</th></tr></thead><tbody>
     ${K.bad.map(r=>`<tr class="zebra"><td>馬券</td><td>${esc(r.v)}</td>
-      <td>${chip(r.a)}${chip(r.b)} ${ck(r.a,r.b)}</td><td class="c">${r.q}</td>
+      <td>${uma?esc(r.a)+" ・ "+esc(r.b):chip(r.a)+chip(r.b)+" "+ck(r.a,r.b)}</td><td class="c">${r.q}</td>
       <td class="n">${yen(r.q*DB.meta.kPrice)}</td>
       <td style="color:var(--ink-dim)">${esc(r.why)}</td></tr>`).join("")}
     ${G.bad.map(r=>`<tr class="zebra"><td>GTO</td><td>${esc(r.v)}</td>
@@ -5562,14 +5682,15 @@ function vResult(){
   const F=FRAMES(),K=calcK(),G=calcG(),B=calcB(),ru=RUN();
   const opt=sel=>'<option value=""></option>'+ru.map(p=>`<option ${nz(p.n)===nz(sel)?"selected":""}>${esc(p.n)}</option>`).join("");
   const [fa,fb]=(DB.result.frame||"-").split("-");
+  const uma=DB.meta.kMode==="馬連";
   pane.innerHTML=`
-  ${U("keiba")?`<div class="card"><h2>① 馬券の当選枠 <small>上位2名がそれぞれ入る枠</small></h2>
+  ${U("keiba")?`<div class="card"><h2>① 馬券の${uma?"当選ペア":"当選枠"} <small>${uma?"上位2名の組み合わせ":"上位2名がそれぞれ入る枠"}</small></h2>
     <div class="row">
       <div class="f"><label>上位1人目</label><select id="r_t1">${opt(DB.result.top2[0])}</select></div>
       <div class="f"><label>上位2人目</label><select id="r_t2">${opt(DB.result.top2[1])}</select></div>
-      <div class="f"><label>枠</label><select id="r_fa">${F.map(f=>`<option ${String(f)===fa?"selected":""}>${f}</option>`).join("")}</select></div>
-      <div class="f"><label>枠</label><select id="r_fb">${F.map(f=>`<option ${String(f)===fb?"selected":""}>${f}</option>`).join("")}</select></div>
-      <span class="hint">氏名を選ぶと枠が自動で入ります。ゾロ目も的中として成立します。</span>
+      ${uma?"":`<div class="f"><label>枠</label><select id="r_fa">${F.map(f=>`<option ${String(f)===fa?"selected":""}>${f}</option>`).join("")}</select></div>
+      <div class="f"><label>枠</label><select id="r_fb">${F.map(f=>`<option ${String(f)===fb?"selected":""}>${f}</option>`).join("")}</select></div>`}
+      <span class="hint">${uma?"上位2名の組み合わせが、そのまま馬連の的中判定に使われます。":"氏名を選ぶと枠が自動で入ります。ゾロ目も的中として成立します。"}</span>
     </div>
     <div class="stat-row"><div>売上金<b>${yen(K.sales)}円</b></div><div>的中口数<b>${K.win}</b></div>
       <div>配当金<b class="hi">${K.win?yen(K.pay)+"円／口":"—"}</b></div>
@@ -5628,9 +5749,12 @@ function vResult(){
     if(U("keiba")){
       const t1=r_t1.value,t2=r_t2.value;
       DB.result.top2=[t1,t2];
-      const p1=RUN().find(p=>nz(p.n)===nz(t1)),p2=RUN().find(p=>nz(p.n)===nz(t2));
-      if(p1&&p2){r_fa.value=p1.f;r_fb.value=p2.f;}
-      DB.result.frame=ck(+r_fa.value,+r_fb.value);
+      /* 馬連は氏名の組合せだけで的中を判定するので、枠（r_fa/r_fb、馬連では描画していない）には触れない */
+      if(DB.meta.kMode!=="馬連"){
+        const p1=RUN().find(p=>nz(p.n)===nz(t1)),p2=RUN().find(p=>nz(p.n)===nz(t2));
+        if(p1&&p2){r_fa.value=p1.f;r_fb.value=p2.f;}
+        DB.result.frame=ck(+r_fa.value,+r_fb.value);
+      }
     }
     if(U("gto")) DB.result.low=[r_l1.value,r_l2.value,r_l3.value];
     touch();render();
@@ -5716,21 +5840,31 @@ function vHelp(){
             tripleBogey:"トリプルボギー（パー＋3）",none:"なし"}[m.sc.cut])+"。"))
       +"<br>同スコアのときは"+({older:"年長者",younger:"年少者",lowhc:"ハンディの小さい方",none:"—"}[m.sc.tiebreak])
       +(m.sc.tiebreak==="none"?"を決めません。":"を上位とします（理由は順位の表と発表の画面に出ます）。")):""}
-    ${U("keiba")?rule("馬券（枠連予想）",
+    ${U("keiba")?(m.kMode==="馬連"?rule("馬券（馬連予想）",
+      "上位2名の<b>氏名の組合せ</b>（順不同）を当てます。<br>"
+      +"1口 "+yen(m.kPrice)+"円。集めた金を的中者だけで山分けし（100円未満は切り捨て）、残りは経費へ。<br>"
+      +"現在 "+RUN().length+"名・"+(RUN().length*(RUN().length-1)/2)+"通り。<br>"
+      +"投票の後に出走を取り消して<b>指名した2名のどちらかが出走しなくなった</b>ときは、その口を無効とし、掛金をお返しします。")
+      :rule("馬券（枠連予想）",
       "上位2名がそれぞれ入る<b>枠</b>の組合せを当てます。同じ枠2つ（ゾロ目）も的中。<br>"
       +"1口 "+yen(m.kPrice)+"円。集めた金を的中者だけで山分けし（100円未満は切り捨て）、残りは経費へ。<br>"
       +"枠は"+(m.frameMode==="group"?"<b>組と同じ番号</b>が自動で入ります。":"自分で指定します（参加者の「枠と実力」）。")
       +"　現在 "+FRAMES().length+"枠・"+(FRAMES().length*(FRAMES().length+1)/2)+"通り。<br>"
-      +"投票の後に組が変わって<b>枠そのものが無くなった</b>ときは、その枠を含む口を無効とし、掛金をお返しします。"):""}
+      +"投票の後に組が変わって<b>枠そのものが無くなった</b>ときは、その枠を含む口を無効とし、掛金をお返しします。")):""}
     ${U("gto")?rule("GTO（下位予想）",
       "グロス打数の多い<b>下位3名</b>を当てます。1口 "+yen(m.gPrice)+"円。<br>"
       +"本日の方式は<b>"+m.gMode+"</b>（"+(m.gMode==="3連単"?"順番まで一致で的中":"3名が合っていれば的中・順不同")+"）。<br>"
       +"的中者が出なかったときは<b>全額返金</b>します。"):""}
+    ${U("keiba")||U("gto")?rule("単勝・複勝を作っていない理由",
+      "予想ゲームは<b>馬券（枠連）とGTO（下位予想）の2つだけ</b>にしています。<br>"
+      +"・<b>単勝</b>（1位だけを当てる）は、すでにある「優勝」の賞と当てる対象が重なるため作っていません。<br>"
+      +"・<b>複勝</b>（上位何名かに入れば的中）は、的中しやすいぶん配当が薄くなり、当てる楽しみが小さくなるため作っていません。<br>"
+      +"馬券とGTOは、的中率と配当のバランスが良い2種類として選んでいます。"):""}
     ${U("keiba")||U("gto")?rule("無効になる口",
       "つぎの口は<b>無効</b>とし、売上に入れず掛金をそのままお返しします。得票数にも数えません。<br>"
       +(U("gto")?"・同じ人を2回以上指名している（入力の時点で弾きます）<br>"
         +"・<b>出走しない方を指名している</b>。欠席が分かったら「"+L.players+"」で組を「未定」にしてください。<br>":"")
-      +(U("keiba")?"・無くなった枠を指名している<br>":"")
+      +(U("keiba")?(m.kMode==="馬連"?"・同じ人を2回指名している、または<b>出走しない方を指名している</b><br>":"・無くなった枠を指名している<br>"):"")
       +"無効の口は「"+L.sum+"」に一覧で出ます。当日はここを見て、集金の担当者と突き合わせてください。"):""}
     ${U("score")?rule("棄権・ノーカード",
       "スコア入力の<b>「ノーカード」に印</b>を付けてください（スマホは1人ずつの画面の「棄権・ノーカードにする」）。"
@@ -5769,7 +5903,8 @@ function vHelp(){
     <table><thead><tr><th style="min-width:10em">場所</th><th>書き方</th></tr></thead><tbody>
     ${rule(L.players,"氏名（タブ）所属（タブ）生年月日　…並び順は自由。「"+L.players+"」の「貼り付けて取り込む」に貼ります。<br>"
       +"西暦（1970/1/1・1970年1月1日）、和暦（S45.6.14・昭和45年6月14日）、Excelの日付シリアル値に対応。")}
-    ${U("keiba")?rule("馬券","氏名（タブ）1-3（タブ）2　…買い目は「1-3」でも「1（タブ）3」でも可。口数を省くと1口。「紙の予想を貼り付け」から。"):""}
+    ${U("keiba")?(m.kMode==="馬連"?rule("馬券（馬連）","氏名（タブ）氏名（タブ）氏名（タブ）口数　…最初が投票者、続く2名が買い目（順不同）。口数を省くと1口。「紙の予想を貼り付け」から。")
+      :rule("馬券","氏名（タブ）1-3（タブ）2　…買い目は「1-3」でも「1（タブ）3」でも可。口数を省くと1口。「紙の予想を貼り付け」から。")):""}
     ${U("gto")?rule("GTO","氏名（タブ）最下位（タブ）2位（タブ）3位（タブ）口数　…氏名の並びがそのまま予想の順番。"):""}
     ${U("score")?rule("スコア","順位（タブ）氏名（タブ）グロス（タブ）HDCP（タブ）ネット　…数字の並びから自動で判別。"
       +"「"+L.score+"」の右の「集計表を貼り付けて全員分を取り込む」を開いて貼ります（集計表から入れる方式のとき）。<br>"
@@ -6304,6 +6439,10 @@ const framesGrid=(lit=[])=>{const F=FRAMES();
   return `<div class="frames" style="grid-template-columns:repeat(${gridCols(F.length)},1fr)">`+
     F.map(f=>`<div class="frame ${lit.includes(f)?"win":""}">${chipL(f)}
       <div class="nm">${inFrame(f).map(esc).join("<br>")}</div></div>`).join("")+"</div>";};
+/* 2026-09-20：馬連の出走表。枠のグリッドと同じ見た目で、枠番の代わりに氏名だけを並べる */
+const peopleGrid=(lit=[])=>{const R=RUN();
+  return `<div class="frames" style="grid-template-columns:repeat(${gridCols(R.length)},1fr)">`+
+    R.map(p=>`<div class="frame ${lit.includes(p.n)?"win":""}"><div class="nm">${esc(p.n)}</div></div>`).join("")+"</div>";};
 const winnerList=a=>a.length
   ?`<div class="winners">${a.map((w,i)=>`<div class="winner" style="animation-delay:${i*.09}s">${esc(w.n)}<em>${w.c}口</em></div>`).join("")}</div>`
   :'<p class="none">的中者なし</p>';
@@ -6452,23 +6591,29 @@ const rank=(r,n)=>`<div class="kicker">G　T　O　結　果</div>
       }
     }
   }
+  const uma=DB.meta.kMode==="馬連";
   if(U("keiba")) slides.push(
     /* 馬券にも幕の見出しを付ける。GTO・選抜者には付いていて馬券だけ無く、
        幕番号が飛んでいた（2026-09-08、馬券をGTOの前へ移したときに気づいた） */
     Object.assign({id:"k-act",lab:"馬券"},actSlide(actNo(),"馬　券",
-      "ネット上位2名が入った枠の組合せを当てる",
+      uma?"ネット上位2名の組み合わせを当てる":"ネット上位2名が入った枠の組合せを当てる",
       ()=>`<div class="mode-label">出走</div>
-        <div class="mode-word">${FRAMES().length}枠　${RUN().length}名</div>`)),
+        <div class="mode-word">${uma?RUN().length+"名":FRAMES().length+"枠　"+RUN().length+"名"}</div>`)),
     {id:"k-board",lab:"馬券の出走表",html:()=>`<div class="kicker">馬　券</div>
-      <div class="title" style="font-size:clamp(20px,3.4vw,44px)">出走　${FRAMES().length}枠 ${RUN().length}名</div>
-      <div class="rule"></div>${framesGrid()}
-      <div class="sub" style="margin-top:3vmin">上位2名が入った枠の組合せが的中</div>`},
-    {id:"k-draw",lab:"馬券 当選枠",who:fa+"-"+fb,enter:drawFrames,html:()=>`<div class="kicker">馬　券　当　選　枠</div>
+      <div class="title" style="font-size:clamp(20px,3.4vw,44px)">出走　${uma?RUN().length+"名":FRAMES().length+"枠 "+RUN().length+"名"}</div>
+      <div class="rule"></div>${uma?peopleGrid():framesGrid()}
+      <div class="sub" style="margin-top:3vmin">${uma?"上位2名の組み合わせが的中":"上位2名が入った枠の組合せが的中"}</div>`},
+    /* 2026-09-20：馬連は枠番の代わりに氏名を大きく表示する（.big-no.txt。氏名は長いので枠番用の正方形は使えない） */
+    {id:"k-draw",lab:"馬券 当選"+(uma?"組合せ":"枠"),who:uma?top.join("-"):fa+"-"+fb,enter:uma?drawPair:drawFrames,
+      html:()=>uma?`<div class="kicker">馬　券　当　選　組　合　せ</div>
+        <div class="combo rolling" id="combo"><div class="big-no txt">？</div><div class="dash">–</div><div class="big-no txt">？</div></div>
+        <div class="pair-names" id="comboNames"></div>`
+      :`<div class="kicker">馬　券　当　選　枠</div>
       <div class="combo rolling" id="combo">${chipL(fa,"big-no")}<div class="dash">–</div>${chipL(fb,"big-no")}</div>
       <div class="pair-names" id="comboNames"></div>`},
     ...(top.filter(Boolean).length?[{id:"k-top",lab:"上位2名",who:top.join("・"),enter:()=>honor(),html:()=>`<div class="kicker">上　位　2　名</div><div class="rule"></div>
       <div class="title" style="font-size:clamp(22px,4.4vw,58px)">${top.map(esc).join("　／　")}</div>
-      <div class="sub">${fa}枠　—　${fb}枠</div>`}]:[]),
+      ${uma?"":`<div class="sub">${fa}枠　—　${fb}枠</div>`}`}]:[]),
     {id:"k-pay",lab:"馬券 払戻",who:K.win?yen(K.pay)+"円／口":"的中なし",enter:()=>countUp("kpay",K.pay),html:()=>`<div class="kicker">馬　券　払　戻</div>
       <div class="payout"><span id="kpay">0</span><span class="yen">円 / 口</span></div>
       <div class="stats"><div class="stat"><i>売上金</i><b>${yen(K.sales)}</b></div>
@@ -6574,6 +6719,22 @@ function drawFrames(el){
     if(step<40)later(run,step<26?70:70+(step-26)*(step-26)*7);
     else{stopRoll();paint(0,S.fa);paint(1,S.fb);combo.classList.remove("rolling");
       names.innerHTML=`<span>${inFrame(S.fa).map(esc).join("・")}</span><span>${inFrame(S.fb).map(esc).join("・")}</span>`;
+      gateOpen();}};
+  later(run,420);
+}
+/* 2026-09-20：馬連の当選ペア発表。枠番の代わりに氏名がスロットのように回って止まる版 */
+function drawPair(el){
+  const combo=el.querySelector("#combo"),names=el.querySelector("#comboNames");
+  const box=combo.querySelectorAll(".big-no"),R=RUN();
+  const short=n=>n?String(n).split(/[\s　]/)[0]:"？";
+  const paint=(i,n)=>{box[i].textContent=short(n);};
+  let step=0;startRoll();
+  const run=()=>{
+    const pick=()=>{const p=R[Math.floor(Math.random()*R.length)];return p?p.n:"";};
+    paint(0,pick());paint(1,pick());step++;
+    if(step<40)later(run,step<26?70:70+(step-26)*(step-26)*7);
+    else{stopRoll();const t=DB.result.top2;paint(0,t[0]);paint(1,t[1]);combo.classList.remove("rolling");
+      names.innerHTML=`<span>${esc(orgOf(t[0])||"")}</span><span>${esc(orgOf(t[1])||"")}</span>`;
       gateOpen();}};
   later(run,420);
 }

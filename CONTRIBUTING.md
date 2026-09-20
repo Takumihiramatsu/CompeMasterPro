@@ -22,7 +22,7 @@ CompeMasterPro/
 │   ├─ pc.webmanifest     ホーム画面への追加用
 │   ├─ icon-*.png / apple-touch-icon.png
 │   └─ README.md          配布のしかた（利用者向け）
-├─ tests/                 ← 検証スイート。25本・2179項目
+├─ tests/                 ← 検証スイート。26本・2273項目
 │   └─ *.js
 └─ CONTRIBUTING.md        この文書
 ```
@@ -64,7 +64,7 @@ for f in *.js; do node "$f"; done 2>&1 | grep -cE '^\s*OK\b'   # → 2179
 ### 4番を忘れないでください
 
 ```js
-const VER = "compe-v62";   // ← 番号を必ず上げる
+const VER = "compe-v63";   // ← 番号を必ず上げる
 ```
 
 サービスワーカーはキャッシュ優先で動きます。**`VER` を変えないと、利用者の端末に
@@ -114,7 +114,7 @@ const VER = "compe-v62";   // ← 番号を必ず上げる
 
 ## 6. 検証スイートの読み方
 
-`tests/` の25本は、それぞれ独立して動きます。器（`document` や `window` の代わり）を
+`tests/` の26本は、それぞれ独立して動きます。器（`document` や `window` の代わり）を
 自前で用意し、`pc.html` の `<script>` を `new Function()` で読み込んで直接呼びます。
 
 **要点となる6本です。**

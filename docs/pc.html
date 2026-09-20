@@ -587,6 +587,12 @@ tr.zebra.pay-drow td{background:rgba(242,208,36,.06)}
 .hb-s span.ok{color:var(--brass)} .hb-s span.ng{color:var(--hit)}
 .hb-s b .tx{font:700 24px var(--jp);color:var(--ink)}
 @media print{.side,.btm,.pghead{display:none!important}}
+/* PC幅（1024px以上）では #work を display:grid（サイドバー用の2列）にしている。
+   grid のまま印刷すると、内容がページをまたいで流れず、ヘッダーの次から白紙になっていた
+   （Chromeなどの印刷エンジンがgrid/flexコンテナのページ分割を苦手とするための不具合。2026-09-20）。
+   印刷では通常のブロック表示に戻し、本文が複数ページへ普通に流れるようにする */
+@media print{body.work #work{display:block!important}
+  #work>.top,#work>.wrap{grid-column:auto}}
 /* ---- 段階3：上の帯を1行に・ホーム・作成画面・大会ハブの仕上げ（2026-09-17、デザイン案P1〜P4・P9） ---- */
 .pgbar{display:none}
 .sv-sub{opacity:.6}
@@ -610,6 +616,7 @@ tr.zebra.pay-drow td{background:rgba(242,208,36,.06)}
   body.work #work.solo{display:block}
 }
 @media print{.pgbar,.hm,.mk{display:none!important}}
+@media print{.hb-main{display:block!important}}
 /* 大会ハブ */
 .hb-main{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:24px;align-items:start}
 .hb-left>.nx{margin-bottom:16px}
@@ -687,6 +694,7 @@ tr.zebra.pay-drow td{background:rgba(242,208,36,.06)}
 .hm-pct{display:flex;flex-direction:column;gap:6px;padding:18px;background:var(--board);border-radius:14px}
 .hm-pct small{font-size:12px;color:var(--ink-dim)}
 .hm-pct b{font:700 54px var(--num);line-height:1.1}
+.hm-pct b.tx{font:700 22px var(--jp);line-height:1.3}
 .hm-pct b em{margin-left:2px;font-style:normal;font-size:20px;color:var(--ink-dim)}
 .hm-pct span{font-size:12.5px;line-height:1.6;color:var(--ink-dim)}
 .hm-rh{display:flex;align-items:baseline;justify-content:space-between;margin:34px 0 12px}
@@ -2387,8 +2395,16 @@ function goStep(t,at){
     if(e&&e.scrollIntoView) e.scrollIntoView({behavior:"smooth",block:"start"});},0);
 }
 function render(){
+  /* 入力のたびに pane を作り直すため、縦スクロールと表の横スクロール（.hscroll）が
+     毎回0に戻り、画面が飛んで見えていた（2026-09-20）。作り直す前の位置を覚えておき、
+     作り直したあとに戻す。Enterで次の欄へ移る処理などが直後に自分でスクロールし直す
+     場合は、そちらの意図的な移動で上書きされるので問題ない */
+  const sx=window.scrollX||window.pageXOffset||0, sy=window.scrollY||window.pageYOffset||0;
+  const hsPos=Array.from(document.querySelectorAll(".hscroll")).map(e=>e.scrollLeft);
   FSC=null; SCC={}; STC=null; STC=settle(); FSC=flowSteps();
   try{ renderBody(); } finally { FSC=null; SCC={}; STC=null; }
+  document.querySelectorAll(".hscroll").forEach((e,i)=>{ if(hsPos[i]) e.scrollLeft=hsPos[i]; });
+  try{ window.scrollTo(sx,sy); }catch(e){}
 }
 function renderBody(){
   const L=tabList();
@@ -2712,7 +2728,11 @@ function vHome(){
   const bar=segs.map(g=>`<i class="${g.ok?"ok":g.cur?"half":""}"></i>`).join("");
   const labs=segs.map(g=>{const c=["players","groups","collect","score","prize"].includes(g.tab)?sideCount(g.tab):"";
     return `<span class="${g.ok?"ok":g.cur?"cur":""}">${SHORT[g.tab]||g.tab}${c?" "+c:""}</span>`;}).join("");
-  const pct=mine.length?Math.round(mine.filter(s=>s.done).length/mine.length*100):100;
+  /* 「発表」の段階にある2項目（順位を確かめる・発表する）は、繰り返し行える操作で
+     完了状態を持たないため done を常に false にしている（flowSteps）。そのまま％を
+     計算すると常に0%になり、発表を終えても達成度がそこで止まって見えていた
+     （2026-09-20）。発表の段階では％を出さず、文章で案内する */
+  const pct=ph==="award"?null:(mine.length?Math.round(mine.filter(s=>s.done).length/mine.length*100):100);
   const rest=mine.filter(s=>!s.done).slice(0,2).map(s=>s.label+(s.rest?" "+s.rest:"")).join("・");
   const goBtn=n
     ? `<button class="hm-go" onclick="${n.at==="@make"?"go('make')":`goStep('${n.tab}','${n.at}')`}">つづきから：${esc(n.at==="@make"?"大会を作る":n.label)} →</button>`
@@ -2735,8 +2755,10 @@ function vHome(){
           <div class="hm-seg">${labs}</div>
           <div class="hm-btns">${goBtn}<button class="hm-sub" onclick="go('hub')">大会ハブを開く</button></div>
         </div>
-        <div class="hm-pct"><small>${PHASES[i][1]}の進み</small><b>${pct}<em>%</em></b>
-          <span>${rest?"残り："+esc(rest):"すべて済みました"}</span></div>
+        <div class="hm-pct">${pct===null
+          ?`<small>${PHASES[i][1]}</small><b class="tx">順位・表彰</b><span>あとは画面を送って発表するだけです</span>`
+          :`<small>${PHASES[i][1]}の進み</small><b>${pct}<em>%</em></b>
+          <span>${rest?"残り："+esc(rest):"すべて済みました"}</span>`}</div>
       </div>
       <div class="hm-rh"><h3>最近のファイル</h3><button class="hm-lk" onclick="openPick(-1)">別のファイルを開く…</button></div>
       ${R.length?`<div class="hm-list">${R.map((r,j)=>`<button class="hm-r" onclick="openPick(${j})">
@@ -3387,17 +3409,21 @@ function pCards(byGroup){
   const car=U("budget")&&hasCarItem();
   return `<div class="pcards no-print">${DB.players.map((p,i)=>{
     const c=FC(+p.f), open=PEXP===i, sub=[p.org,p.bd].filter(x=>nz(x)).map(esc).join(" ・ ");
+    /* 予想のみの方は組・枠・実力が意味を持たないので、編集欄そのものを出さない
+       （出したままだと、使わない欄が並ぶだけで画面が煩わしい。2026-09-20）。
+       車・原資は回るかどうかとは別の話（車は同乗するだけの場合もある）なので、そのまま出す */
+    const isVote=joinOf(p)==="vote";
     return `<div class="pc${open?" open":""}">
       <button class="pc-h" onclick="pExp(${i})" aria-expanded="${open}"><span class="pc-no">${i+1}</span>
         <span class="pc-nm"><strong>${nz(p.n)?esc(p.n):"（氏名なし）"}</strong><small>${sub||"所属・生年月日なし"}</small></span>
-        <span class="pc-g">${+p.g?p.g+"組":"組なし"}${!byGroup&&U("keiba")&&+p.f?`<i>${p.f}枠</i>`:""}${joinOf(p)==="vote"?"<i>予想のみ</i>":""}</span></button>
+        <span class="pc-g">${+p.g?p.g+"組":"組なし"}${!byGroup&&U("keiba")&&+p.f?`<i>${p.f}枠</i>`:""}${isVote?"<i>予想のみ</i>":""}</span></button>
       ${open?`<div class="pc-b">
         <div class="f w"><label>氏名</label><input value="${esc(p.n)}" oninput="pEdit(${i},'n',this.value)" placeholder="氏名"></div>
         <div class="f"><label>所属・部署</label><input value="${esc(p.org||"")}" oninput="pEdit(${i},'org',this.value)" placeholder="—"></div>
         <div class="f"><label>生年月日</label><input value="${esc(p.bd||"")}" onchange="pEdit(${i},'bd',parseDate(this.value)||this.value)" placeholder="1970-01-01"></div>
-        <div class="f"><label>組</label><select onchange="pEdit(${i},'g',this.value)">${gOpts(p.g)}</select></div>
+        ${isVote?"":`<div class="f"><label>組</label><select onchange="pEdit(${i},'g',this.value)">${gOpts(p.g)}</select></div>
         ${byGroup?"":`<div class="f"><label>枠</label><select class="fsel" style="background:${c.bg};color:${c.fg}" onchange="pEdit(${i},'f',this.value)">${fOpts(p.f)}</select></div>
-        <div class="f"><label>実力の目安</label><input type="number" value="${p.skill??""}" onchange="pEdit(${i},'skill',this.value)" placeholder="—"></div>`}
+        <div class="f"><label>実力の目安</label><input type="number" value="${p.skill??""}" onchange="pEdit(${i},'skill',this.value)" placeholder="—"></div>`}`}
         <div class="f w"><label>参加のしかた</label><select onchange="joinSet(${i},this.value)">
           ${JOIN.map(([v,l])=>`<option value="${v}" ${joinOf(p)===v?"selected":""}>${l}</option>`).join("")}</select></div>
         ${car?`<label class="pc-ck"><input type="checkbox" ${+p.cars>0?"checked":""} onchange="pEdit(${i},'cars',this.checked)"> 車を出す</label>`:""}
@@ -3457,17 +3483,24 @@ function vPlayers(){
       ${U("budget")?'<th class="c col cm" style="width:56px">原資</th><th class="n col cm" style="min-width:6.5em">個別額</th>':""}
       <th class="c no-print" style="width:92px">並べ替え</th>
     </tr></thead><tbody id="rtb">
-    ${DB.players.map((p,i)=>{const c=FC(+p.f);return `<tr class="zebra" draggable="true"
+    ${DB.players.map((p,i)=>{const c=FC(+p.f);
+      /* 予想のみ（回らない）と決めた方は、組・枠・実力の欄が意味を持たない。
+         生きたセレクト／入力のままだと、誤って組や枠が入ってしまったり、
+         使わない欄が並ぶだけで画面が煩わしくなる（2026-09-20）。
+         ダッシュ表示にして「確定済みで触る欄がない」ことを見せる（個別額は元から同じ扱い）。
+         車・原資は回るかどうかとは別の話（車は同乗するだけの場合もある）なので、そのまま出す */
+      const isVote=joinOf(p)==="vote", dash='<span style="color:var(--ink-dim)">—</span>';
+      return `<tr class="zebra" draggable="true"
         ondragstart="dgStart(event,${i})" ondragover="dgOver(event,${i})" ondrop="dgDrop(event,${i})" ondragend="dgEnd()">
       <td class="c handle">⠿</td><td class="c" style="color:var(--ink-dim);font-family:var(--num)">${i+1}</td>
       <td><input value="${esc(p.n)}" oninput="pEdit(${i},'n',this.value)" placeholder="氏名"></td>
       <td class="col cb"><input value="${esc(p.org||"")}" oninput="pEdit(${i},'org',this.value)" placeholder="—"></td>
       <td class="col cb"><input value="${esc(p.bd||"")}" onchange="pEdit(${i},'bd',parseDate(this.value)||this.value)" placeholder="1970-01-01"></td>
-      <td class="c col cb cf"><select onchange="pEdit(${i},'g',this.value)">${gOpts(p.g)}</select></td>
-      ${byGroup?"":`<td class="c col cf"><select class="fsel" style="background:${c.bg};color:${c.fg}"
-        onchange="pEdit(${i},'f',this.value)">${fOpts(p.f)}</select></td>
-      <td class="n col cf"><input class="q" style="width:66px" type="number"
-        value="${p.skill??""}" onchange="pEdit(${i},'skill',this.value)" placeholder="—"></td>`}
+      <td class="c col cb cf">${isVote?dash:`<select onchange="pEdit(${i},'g',this.value)">${gOpts(p.g)}</select>`}</td>
+      ${byGroup?"":`<td class="c col cf">${isVote?dash:`<select class="fsel" style="background:${c.bg};color:${c.fg}"
+        onchange="pEdit(${i},'f',this.value)">${fOpts(p.f)}</select>`}</td>
+      <td class="n col cf">${isVote?dash:`<input class="q" style="width:66px" type="number"
+        value="${p.skill??""}" onchange="pEdit(${i},'skill',this.value)" placeholder="—">`}</td>`}
       ${U("budget")&&hasCarItem()?`<td class="c col cm"><input type="checkbox" ${+p.cars>0?"checked":""}
         onchange="pEdit(${i},'cars',this.checked)"></td>`:""}
       <td class="c col cm"><select onchange="joinSet(${i},this.value)">
@@ -3475,7 +3508,7 @@ function vPlayers(){
       </select></td>
       ${U("budget")?`<td class="c col cm"><input type="checkbox" ${p.fee!==false?"checked":""} onchange="pEdit(${i},'fee',this.checked)"></td>
       <td class="n col cm">${p.fee===false
-        ? '<span style="color:var(--ink-dim)">—</span>'
+        ? dash
         : `<input class="q" style="width:80px" type="number" step="100" placeholder="${yen(BG().fee)}"
             value="${p.feeAmt??""}" onchange="pEdit(${i},'feeAmt',this.value)">`}</td>`:""}
       <td class="c no-print p-ops"><button class="mv" onclick="pMove(${i},-1)" aria-label="上へ">▲</button><button class="mv" onclick="pMove(${i},1)" aria-label="下へ">▼</button><button class="del" onclick="pDel(${i})" aria-label="削除">×</button></td></tr>`;}).join("")||
@@ -4519,6 +4552,11 @@ function pastePreview(){
     <div class="row" style="margin-top:11px">
       <button class="btn primary" onclick="pasteApply()">この内容で取り込む</button>
       <button class="btn ghost" onclick="document.getElementById('pv').innerHTML=''">やめる</button></div>`;
+  /* 「読み取る」は右の列（貼り付け欄のすぐ下）にあるが、結果は画面の上のほうの #pv に出る。
+     ボタンの近くで見えないと「反応していない」ように見えて分かりにくかったため、
+     読み取ったら結果までスクロールして見せる（2026-09-20） */
+  const pv=document.getElementById("pv");
+  if(pv&&pv.scrollIntoView) pv.scrollIntoView({behavior:"smooth",block:"start"});
 }
 function pasteApply(){
   let n=0,hn=0;

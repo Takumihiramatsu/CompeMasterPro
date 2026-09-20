@@ -2323,8 +2323,8 @@ function flowSteps(){
   const add=(ph,tab,label,done,rest,desc,at)=>{
     if(have(tab)) S.push({ph,tab,label,done:!!done,rest:rest||"",desc:desc||"",at:at||""}); };
   const named=DB.players.filter(p=>nz(p.n));
-  /* 回る人。「予想のみ」は組も枠も実費も持たない */
-  const plays=named.filter(p=>joinOf(p)!=="vote"||+p.g>0||p.fee!==false);
+  /* 回る人。「予想のみ」は組も枠も実費も持たない（needsGroup を参照） */
+  const plays=named.filter(needsGroup);
   /* 参加者がまだいない間は、作成画面（基本 → 競技方法 → 追加ルール）へ送る（@make） */
   /* 開催日は「日付として読める」ことまで見る（v58）。「2027.920」のような入力が済みになり、曜日も「開催まで◯日」も出ていなかった */
   add("prep","meta","大会の基本を入れる", nz(m.name)&&nz(m.place)&&!!evDate(m.date), nz(m.date)&&!evDate(m.date)?"開催日が読めません":"",
@@ -2553,7 +2553,7 @@ function sideCount(k){
 }
 function sideCount0(k){
   const named=DB.players.filter(p=>nz(p.n));
-  const plays=named.filter(p=>joinOf(p)!=="vote"||+p.g>0||p.fee!==false);
+  const plays=named.filter(needsGroup);
   if(k==="players") return named.length?named.length+"":"";
   if(k==="rules") return ruleOnN()+"";
   if(k==="groups"){ if(!plays.length) return "";
@@ -2614,7 +2614,7 @@ function btmHtml(){
    使わないなら参加者・組合せ・競技方法（P4）。当日と発表では集金・スコア・技能賞の進み */
 function hubStats(){
   const m=DB.meta, ph=PHASE(), named=DB.players.filter(p=>nz(p.n));
-  const plays=named.filter(p=>joinOf(p)!=="vote"||+p.g>0||p.fee!==false);
+  const plays=named.filter(needsGroup);
   const S=flowSteps();
   /* ok：true＝済み（✓）、false＝要対応（●）、null＝説明だけ */
   const stat=(k,l,v,sub,ok,to)=>({k,h:`<button class="hb-s" onclick="go('${to}')"><small>${l}</small><b>${v}</b>
@@ -3684,7 +3684,7 @@ function bulkApply(){
     if(!r.ok) return;
     const p=DB.players.find(x=>nz(x.n)===nz(r.name));
     if(p){ if(r.org)p.org=r.org; if(r.bd)p.bd=r.bd; u++; }
-    else { DB.players.push({n:r.name,org:r.org,bd:r.bd,g:0,f:0,vote:true,fee:true,feeAmt:""}); a++; }
+    else { DB.players.push({n:r.name,org:r.org,bd:r.bd,g:0,f:0,vote:true,fee:true,feeAmt:"",join:"both"}); a++; }
   });
   BPV=[];touch();render();
   alert("新規 "+a+"名、更新 "+u+"名を取り込みました。");
@@ -3706,7 +3706,7 @@ function pEdit(i,k,v){
   if(k==="g"||k==="f"){const now=+p.f>0; if(was!==now) p.fee=now;}
   touch(); if(["g","f","vote","fee","feeAmt","cancel"].includes(k)) render();
 }
-function pAdd(){DB.players.push({n:"",org:"",bd:"",g:0,f:0,vote:true,fee:true,feeAmt:""});PEXP=DB.players.length-1;touch();render();}
+function pAdd(){DB.players.push({n:"",org:"",bd:"",g:0,f:0,vote:true,fee:true,feeAmt:"",join:"both"});PEXP=DB.players.length-1;touch();render();}
 function pDel(i){if(!confirm((DB.players[i].n||"この行")+" を削除します。よろしいですか。"))return;DB.players.splice(i,1);PEXP=-1;touch();render();}
 function pMove(i,d){const j=i+d;if(j<0||j>=DB.players.length)return;
   const a=DB.players;[a[i],a[j]]=[a[j],a[i]];if(PEXP===i)PEXP=j;else if(PEXP===j)PEXP=i;touch();render();}
@@ -3961,13 +3961,24 @@ function gOut(n){const p=DB.players.find(x=>x.n===n);if(p){p.g=0;p.f=0;   /* 組
      プレーのみ   … 回るが、予想ゲームには参加しない
      予想のみ     … 回らず、馬券・GTOだけ買う。実費も原資もかからない */
 const JOIN=[["both","プレー＋予想"],["play","プレーのみ"],["vote","予想のみ"]];
-const joinOf=p=>(!(+p.f>0)&&p.vote)?"vote":(p.vote?"both":"play");
+/* 2026-09-20：p.join（このプルダウンで選んだ値そのもの）があれば最優先で使う。
+   無ければ従来どおり f・vote から推定する（未選択のまま＝組がまだ無い新規参加者の既定表示のため） */
+const joinOf=p=>p.join||((!(+p.f>0)&&p.vote)?"vote":(p.vote?"both":"play"));
 function joinSet(i,v){
   const p=DB.players[i]; if(!p) return;
+  p.join=v;
   if(v==="vote"){ p.g=0; p.f=0; p.fee=false; p.vote=true; p.cars=0; }
   else { p.vote=(v==="both"); if(p.fee===false) p.fee=true; }
   touch();render();
 }
+/* 「組み合わせを決める」等で「回る人」を数えるときの判定。
+   2026-09-20：原資の対象（fee）だけを後から個別に付け直した「予想のみ」の方まで
+   「回る人」に数えてしまい、参加者リストで「予想のみ」を選び直しても「組み合わせを決める」の
+   残り人数が減らないことがあった（参加のしかたのプルダウンで一度「予想のみ」を選んだ以上、
+   原資の対象を後で付け直しても、回る・回らないの判定は覆らないようにする）。
+   一方、まだこのプルダウンを一度も触っていない新規参加者（既定値のまま）は、
+   f・fee から「回る」と推定する必要があるため、その場合だけ従来どおりの推定を使う */
+const needsGroup=p=>p.join?(p.join!=="vote"||+p.g>0):(joinOf(p)!=="vote"||+p.g>0||p.fee!==false);
 /* 前の版から呼ばれていた形も残す */
 function voteOnly(i,on){ joinSet(i,on?"vote":"both"); }
 function gpStart(e,n){dragP=n;e.dataTransfer.effectAllowed="move";

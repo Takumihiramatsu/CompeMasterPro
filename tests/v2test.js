@@ -529,6 +529,18 @@ app.sample(); global.flush();
                {n:'丙',org:'',bd:'',g:0,f:0,vote:true,fee:false,feeAmt:''}];
     const g=app.nextStep().n;
     chk('組の決まっていない人を数える（予想のみは数えない）', g.label==='組み合わせを決める'&&g.rest==='残り1名', g.label+' '+g.rest);
+    /* 2026-09-20：参加のしかたで「予想のみ」を選んだあとに、原資の対象（fee）だけを
+       個別に付け直しても「組み合わせを決める」の残り人数に戻ってこないことを確かめる。
+       付け直す前は原資の対象がオフ（joinSetの効果）で「予想のみ」に数えられており、
+       付け直した後も参加のしかたの選択そのものは変わっていないはずなので、件数は変わらない */
+    O.players.push({n:'丁',org:'',bd:'',g:0,f:0,vote:false,fee:true,feeAmt:''});
+    const di=O.players.length-1;
+    app.S4().joinSet(di,'vote');
+    app.pEdit(di,'fee',true);
+    const g2=app.nextStep().n;
+    chk('「予想のみ」を選んだあとに原資を付け直しても残り人数は増えない',
+        g2.label==='組み合わせを決める'&&g2.rest==='残り1名', g2.label+' '+g2.rest);
+    O.players.pop();
     O.players[0].g=1;
     /* 段階4で「スタート時刻を入れる」を足した */
     const tm=app.nextStep().n;

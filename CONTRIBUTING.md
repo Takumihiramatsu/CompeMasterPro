@@ -22,7 +22,7 @@ CompeMasterPro/
 │   ├─ pc.webmanifest     ホーム画面への追加用
 │   ├─ icon-*.png / apple-touch-icon.png
 │   └─ README.md          配布のしかた（利用者向け）
-├─ tests/                 ← 検証スイート。26本・2273項目
+├─ tests/                 ← 検証スイート。26本・2274項目
 │   └─ *.js
 └─ CONTRIBUTING.md        この文書
 ```
@@ -64,7 +64,7 @@ for f in *.js; do node "$f"; done 2>&1 | grep -cE '^\s*OK\b'   # → 2179
 ### 4番を忘れないでください
 
 ```js
-const VER = "compe-v63";   // ← 番号を必ず上げる
+const VER = "compe-v64";   // ← 番号を必ず上げる
 ```
 
 サービスワーカーはキャッシュ優先で動きます。**`VER` を変えないと、利用者の端末に

@@ -7,7 +7,7 @@
 USBに入れて持ち運べます。ゴルフ場は電波が弱いことがあるためです。
 
 - 公開ページ … https://takumihiramatsu.github.io/CompeMasterPro/
-- 検証スイート … 26本・2273項目（`tests/`）
+- 検証スイート … 26本・2274項目（`tests/`）
 
 ---
 

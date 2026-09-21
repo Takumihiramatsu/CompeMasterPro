@@ -1444,12 +1444,45 @@ function autoSave(){
   if(!LS_OK)return;
   clearTimeout(saveTimer);
   saveTimer=setTimeout(()=>{
-    try{localStorage.setItem(LSKEY,JSON.stringify({at:Date.now(),db:DB}));lastAuto=Date.now();paintSave();}
+    try{localStorage.setItem(LSKEY,JSON.stringify({at:Date.now(),db:DB}));lastAuto=Date.now();paintSave();maybeAutoGen();}
     catch(e){LS_OK=false;paintSave();}},400);
 }
 function loadAuto(){if(!LS_OK)return null;try{const r=localStorage.getItem(LSKEY);return r?JSON.parse(r):null;}catch(e){return null;}}
 function clearAuto(){if(!confirm("この端末に残っている自動保存を消します。よろしいですか。"))return;
   try{localStorage.removeItem(LSKEY);}catch(e){}lastAuto=null;restored=false;paintSave();render();}
+/* 「大会を丸ごと置き換えても惜しくないか」の判定。参加者・馬券・GTOのどれかに
+   実データがあれば「惜しい」とみなす。newCompe/copyPrev/wipe/upJsonで共通に使う（2026-09-21） */
+const hasRealData=()=>DB.players.some(p=>nz(p.n))||DB.keiba.length>0||DB.gto.length>0;
+/* ---- 自動保存の世代管理（2026-09-21） ----
+   上のLSKEY（v2）はこれまで通り「直近の作業内容」を1件だけ、入力のたびに上書きする
+   （挙動は変えない。復元テスト・起動時の自動復元は従来のまま）。
+   これとは別に、以下の2つの場面で「世代」を最大3件まで積み増す。
+     ・前回の世代保存から5分以上経っていて、かつ実データがある（時間による保険）
+     ・大会をまるごと置き換える操作（読み込み・新規作成・全消去）の直前（事故防止の保険）
+   通常の自動保存とはキーを分け、失敗しても本来の自動保存には影響させない。 */
+const GKEY="golfCompe.autosave.gens.v1";
+let lastGenAt=0;
+function loadGens(){if(!LS_OK)return [];try{const r=JSON.parse(localStorage.getItem(GKEY)||"[]");return Array.isArray(r)?r:[];}catch(e){return [];}}
+function pushGen(){
+  if(!LS_OK||!hasRealData())return;
+  try{
+    const gens=loadGens();
+    gens.unshift({at:Date.now(),db:JSON.parse(JSON.stringify(DB))});
+    localStorage.setItem(GKEY,JSON.stringify(gens.slice(0,3)));
+    lastGenAt=Date.now();
+  }catch(e){/* 容量不足等はあきらめる。通常の自動保存（LSKEY）には影響しない */}
+}
+function maybeAutoGen(){ if(Date.now()-lastGenAt>=300000) pushGen(); }
+function restoreGen(i){
+  const gens=loadGens(),g=gens[i]; if(!g) return;
+  const nm=(g.db&&g.db.meta&&g.db.meta.name)||"この大会";
+  if(!confirm('"'+nm+'"（'+hhmm(g.at)+'時点の控え）に戻します。\n今の内容は失われます。よろしいですか。'))return;
+  DB=migrate(g.db);dirty=false;restored=false;NOTE="";TAB="hub";autoSave();render();
+}
+function clearGens(){
+  if(!confirm("保存されている過去の状態の控えをすべて消します。よろしいですか。"))return;
+  try{localStorage.removeItem(GKEY);}catch(e){}render();
+}
 /* 保存の状態。まだ一度も自動保存していないときの文言が、
    予想入力の空欄の文言（まだ投票がありません…）になっていたのを直した（2026-09-16） */
 function paintSave(){
@@ -2729,8 +2762,9 @@ function copyPick(){ const f=document.getElementById("copyFile"); if(f&&f.click)
 
 /* ---- 新しい大会・前回の設定のコピー（段階0の決定5：ルール・賞・コースだけを引き継ぐ） ---- */
 function newCompe(){
-  const has=DB.players.some(p=>nz(p.n))||DB.keiba.length||DB.gto.length;
+  const has=hasRealData();
   if(has&&!confirm("いまの大会を閉じて、新しい大会を作ります。\nファイルに書き出していなければ、先に「書き出す」を押してください。\n入力をはじめると、この端末の自動保存は新しい大会で上書きされます。よろしいですか。")) return;
+  if(has) pushGen();
   DB=blank(); dirty=false; restored=false; FILENAME=""; MKSTEP=1;
   PHOPEN={}; NEWTABS={}; FOLD={}; CRS={pref:"",q:"",club:"",a:0,b:1};
   TAB="make"; NOTE=""; render();
@@ -2760,8 +2794,9 @@ function copyPrev(f){
   r.onload=()=>{
     let d; try{ d=JSON.parse(r.result); if(!d.meta) throw 0; d=migrate(d); }
     catch(e){ alert("読み込めませんでした。このアプリで書き出したJSONを選んでください。"); return; }
-    const has=DB.players.some(p=>nz(p.n));
+    const has=hasRealData();
     if(has&&!confirm("いまの大会には参加者が入っています。前回のルール・賞・コースで上書きします（参加者と予想はそのまま）。よろしいですか。")) return;
+    if(has) pushGen();
     const msg=copyRules(d);
     TAB=has?"meta":"make"; MKSTEP=1; NOTE=msg; render();
   };
@@ -5995,6 +6030,24 @@ function vHelp(){
 }
 
 /* ---- データ ---- */
+/* 2026-09-21：世代の控え（最大3件）の一覧・復元カード。控えが無ければ何も出さない */
+function genCard(){
+  const gens=loadGens();
+  if(!gens.length) return "";
+  return `<div class="card"><h2>誤って上書きしたときの復元</h2>
+    <div class="hint">大会を読み込む・新しく作る・全部消す直前と、5分おきに、この端末へ自動で控えを残しています（最大3件）。</div>
+    <div style="margin-top:9px;display:flex;flex-direction:column;gap:8px">
+    ${gens.map((g,i)=>{
+      const nm=esc((g.db&&g.db.meta&&g.db.meta.name)||"（大会名なし）");
+      const pn=((g.db&&g.db.players)||[]).filter(p=>nz(p.n)).length;
+      return `<div class="row" style="justify-content:space-between;align-items:center">
+        <span>${hhmm(g.at)}　${nm}　参加者${pn}名</span>
+        <button class="btn ghost" onclick="restoreGen(${i})">この状態に戻す</button></div>`;
+    }).join("")}
+    </div>
+    <div class="row" style="margin-top:9px"><button class="btn ghost" onclick="clearGens()">控えをすべて消す</button></div>
+  </div>`;
+}
 function vData(){
   pane.innerHTML=`
   <div class="card"><h2>自動保存</h2>
@@ -6005,6 +6058,7 @@ function vData(){
     <div class="hint" style="margin-top:9px">自動保存は<b>この端末だけ</b>に残ります。別のPCで使うときはファイルに書き出してください。</div>
     ${LS_OK?'<div class="row" style="margin-top:11px"><button class="btn ghost" onclick="clearAuto()">この端末の自動保存を消す</button></div>':""}
   </div>
+  ${genCard()}
   <div class="card"><h2>ファイルに保存・読み込み</h2>
     <div class="row">
       <button class="btn primary" onclick="dlJson()">保存（ファイルに書き出す）</button>
@@ -6081,11 +6135,23 @@ function upJson(f){
   const r=new FileReader();
   r.onload=()=>{try{const d=JSON.parse(r.result);
     if(!d.meta)throw 0;
-    DB=migrate(d);dirty=false;restored=false;NOTE="";recentAdd(f.name||"");autoSave();
+    const next=migrate(d);
+    /* 2026-09-21：いまの大会に実データがあるまま読み込むと、保存していない変更が
+       無確認で失われていた（事故報告により追加）。読み込む前に確認し、控えも残す */
+    const has=hasRealData();
+    if(has&&!confirm("いまの大会の内容を、読み込んだファイルで置き換えます。\n保存していない変更は失われます。よろしいですか。")) return;
+    if(has) pushGen();
+    DB=next;dirty=false;restored=false;NOTE="";recentAdd(f.name||"");autoSave();
     if(TAB==="home"||TAB==="make") TAB="hub";
     render();
   }catch(e){alert("読み込めませんでした。このアプリで書き出したJSONを選んでください。");}};
   r.readAsText(f);
+}
+/* 2026-09-21：氏名・団体名にカンマや改行、引用符が入っていると列がずれていた。
+   Excel等が読める形（値をダブルクォートで囲み、中の"は""に）に直す */
+function csvCell(v){
+  const s=v===null||v===undefined?"":String(v);
+  return /[",\r\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s;
 }
 function dlCsv(){
   const L=ledger(),K=calcK(),G=calcG();
@@ -6093,10 +6159,11 @@ function dlCsv(){
   L.forEach(x=>{const p=DB.players.find(y=>y.n===x.n)||{};
     rows.push([x.n,p.g||"",p.f||"",x.ku,x.gu,x.paid,x.back,x.fine,x.net]);});
   rows.push(["合計","","",K.units,G.units,K.sales+G.sales,"","",""]);
-  dl("精算一覧.csv","\uFEFF"+rows.map(r=>r.join(",")).join("\r\n"),"text/csv");
+  dl("精算一覧.csv","\uFEFF"+rows.map(r=>r.map(csvCell).join(",")).join("\r\n"),"text/csv");
 }
 function wipe(){
   if(!confirm("入力した内容をすべて消します。よろしいですか。"))return;
+  pushGen();
   DB=blank();restored=false;try{localStorage.removeItem(LSKEY);}catch(e){}
   lastAuto=null;dirty=false;paintSave();render();
 }

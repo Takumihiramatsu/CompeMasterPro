@@ -91,7 +91,7 @@ console.log('\n=== 6. 賞金合計と収支 ===');
 const P=app.prizeTotal();
 chk('団体賞が合計に入る', P.team===app.PZ().team*app.TM().top, P.team);
 chk('ラッキー賞が合計に入る', P.lucky===app.PZ().lucky*app.LK().count, P.lucky);
-chk('総額＝順位＋技能＋団体＋抽選', P.all===P.rank+P.skill+P.team+P.lucky, P.all);
+chk('総額＝順位＋技能＋団体＋ラッキー賞', P.all===P.rank+P.skill+P.team+P.lucky, P.all);
 const B=app.budget();
 chk('収支の支出に団体賞', B.exp.some(x=>x.l==='団体賞'));
 chk('収支の支出にラッキー賞', B.exp.some(x=>x.l==='ラッキー賞'));

@@ -3074,7 +3074,7 @@ function vCollect(){
 let RKSORT="n";
 const SLIDECAT=[[/^cover$/,"開幕"],[/^nearAny/,"何でもニアピン"],[/^near/,"ニアピン"],[/^drako/,"ドラコン"],
   [/^s-(in|best|\d+)$/,"競技結果"],[/^t-/,"団体賞"],[/^s-(pz\d+|other)$/,"賞"],[/^k-/,"馬券"],[/^g(-|\d)/,"GTO"],
-  [/^b-/,"選抜者・罰金"],[/^lucky$/,"抽選"],[/^end$/,"締め"]];
+  [/^b-/,"選抜者・罰金"],[/^lucky$/,"ラッキー賞"],[/^end$/,"締め"]];
 function showPlan(){
   const keepSl=slides, keepS=S; let ids=[];
   try{ buildSlides(); ids=slides.map(x=>x.id); }catch(e){ ids=[]; }
@@ -6753,7 +6753,7 @@ const rank=(r,n)=>`<div class="kicker">G　T　O　結　果</div>
   }
   if(U("lucky")){
     slides.push({id:"lucky",lab:"ラッキー賞",enter:luckyRoll,
-      html:()=>`<div class="kicker">抽　選　賞</div>
+      html:()=>`<div class="kicker">ラ ッ キ ー 賞</div>
         <div class="sub" style="margin-bottom:3vmin">まだ何も当たっていない ${luckyPool().length}名から ${LK().count}名</div>
         <div class="name-xl" id="lkName" style="min-height:1.2em">　</div>
         <div class="winners" id="lkList" style="margin-top:4vmin"></div>`});

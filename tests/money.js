@@ -37,7 +37,7 @@ chk('ドラコン 1,000×2=2,000', S.find(r=>r.key==='drako').total===2000);
 chk('何でも 1,000×2=2,000', S.find(r=>r.key==='nearAny').total===2000);
 chk('技能賞 小計 8,000円', P.skill===8000, P.skill);
 chk('順位賞＋技能賞 32,000円', P.rank+P.skill===32000, P.rank+P.skill);
-chk('団体賞・抽選賞を含めた総額', P.all===P.rank+P.skill+P.team+P.lucky, P.all);
+chk('団体賞・ラッキー賞を含めた総額', P.all===P.rank+P.skill+P.team+P.lucky, P.all);
 
 console.log('\n=== 2. 受賞者が順位から自動で入る ===');
 app.applyScores();

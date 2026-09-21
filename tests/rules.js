@@ -73,7 +73,7 @@ const T2=app.teams();
 chk('全員・平均にも切替', T2.rows[0].used.length===8&&T2.key==='avg', T2.rows.map(t=>t.name+' 平均'+t.avg).join(' / '));
 app.TM().use='sum'; app.TM().size=3;
 
-console.log('\n=== 5. 抽選賞 ===');
+console.log('\n=== 5. ラッキー賞 ===');
 const pool1=app.luckyPool().length;
 chk('受賞者を除いた対象', pool1<app.DB().players.length, pool1+'名 / 全'+app.DB().players.length+'名');
 app.drawLucky();
@@ -90,17 +90,17 @@ app.LK().exclude=true;
 console.log('\n=== 6. 賞金合計と収支 ===');
 const P=app.prizeTotal();
 chk('団体賞が合計に入る', P.team===app.PZ().team*app.TM().top, P.team);
-chk('抽選賞が合計に入る', P.lucky===app.PZ().lucky*app.LK().count, P.lucky);
+chk('ラッキー賞が合計に入る', P.lucky===app.PZ().lucky*app.LK().count, P.lucky);
 chk('総額＝順位＋技能＋団体＋抽選', P.all===P.rank+P.skill+P.team+P.lucky, P.all);
 const B=app.budget();
 chk('収支の支出に団体賞', B.exp.some(x=>x.l==='団体賞'));
-chk('収支の支出に抽選賞', B.exp.some(x=>x.l==='抽選賞'));
+chk('収支の支出にラッキー賞', B.exp.some(x=>x.l==='ラッキー賞'));
 
 console.log('\n=== 7. 発表画面 ===');
 app.buildSlides();
 const ids=app.slides.map(s=>s.id);
 chk('団体賞の画面がある', ids.includes('t-team'));
-chk('抽選賞の画面がある', ids.includes('lucky'));
+chk('ラッキー賞の画面がある', ids.includes('lucky'));
 let e=0; app.slides.forEach(s=>{try{s.html()}catch(x){e++;console.log('  ★',s.id,x.message)}});
 chk('全'+app.slides.length+'画面が描画できる', e===0);
 app.DB().meta.use.team=false; app.DB().meta.use.lucky=false;
@@ -112,7 +112,7 @@ console.log('\n=== 8. 移行 ===');
 const old={v:2,meta:{},players:[],groups:[],keiba:[],gto:[]};
 const m=app.migrate(old);
 chk('団体賞の既定が入る', m.meta.team.size===3);
-chk('抽選賞の既定が入る', m.meta.lucky.count===2);
+chk('ラッキー賞の既定が入る', m.meta.lucky.count===2);
 chk('当選者は空配列', Array.isArray(m.result.lucky));
 
 console.log('\n=== 9. 画面描画 ===');
@@ -120,7 +120,7 @@ e=0;['meta','players','money','result'].forEach(t=>{try{app.go(t)}catch(x){e++;c
 chk('各タブが描ける', e===0);
 app.go('money');
 chk('団体賞のカードがある', store['pane'].innerHTML.includes('団体賞'));
-chk('抽選賞のカードがある', store['pane'].innerHTML.includes('抽選賞'));
+chk('ラッキー賞のカードがある', store['pane'].innerHTML.includes('ラッキー賞'));
 chk('飛び賞のボタンがある', store['pane'].innerHTML.includes('○位ごとに追加'));
 console.log('\n=== 10. 技能賞（ニアピン・何でもニアピン・ドラコン）の架空データ ===');
 /* （実在のコース）のパー配分に合わせた対象ホールと、架空名の受賞データ。

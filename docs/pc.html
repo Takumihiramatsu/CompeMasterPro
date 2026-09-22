@@ -1338,7 +1338,7 @@ tr.ncrow .s-nc{font-size:11px;color:var(--ink-dim)}
   <nav class="side no-print" id="side" aria-label="画面の一覧"></nav>
   <div class="top">
     <div class="bar">
-      <button class="brand" onclick="go('home')" title="ホームへ"><span class="cmark">CompeMaster<b>PRO</b></span></button>
+      <button class="brand" onclick="go('home')" title="ホームへ"><span class="cmark" id="brandMark">CompeMaster<b>PRO</b></span></button>
       <div class="vr"></div>
       <h1 id="hdTitle">—</h1>
       <div class="pgbar" id="pgBar"></div>
@@ -1366,6 +1366,10 @@ tr.ncrow .s-nc{font-size:11px;color:var(--ink-dim)}
     <button onclick="toggleSound()" id="sndBtn">音 ON</button>
   </div>
 </div>
+
+<!-- ゴルフ場専用版のビルドは、この1行を venue-config の内容に置き換える。
+     共有エンジン（このファイルそのもの）では null のまま＝従来通りの汎用動作。 -->
+<script id="venueConfig">window.VENUE_CONFIG = null;</script>
 
 <script>
 /* ================= データ ================= */
@@ -1435,8 +1439,10 @@ const ck=(a,b)=>Math.min(a,b)+"-"+Math.max(a,b);
 /* 2026-09-20：馬連（氏名2名の組合せ、順不同）の的中判定キー。枠連の ck() の氏名版 */
 const ckN=(a,b)=>[nz(a),nz(b)].sort().join("／");
 
-/* ---- 自動保存 ---- */
-const LSKEY="golfCompe.autosave.v2";
+/* ---- 自動保存 ----
+   ゴルフ場専用版では、キーの末尾に施設スラッグを付けて分離する。
+   同じ端末で複数ゴルフ場の専用版を開いても、自動保存が混ざらないようにするため。 */
+const LSKEY="golfCompe.autosave.v2"+(window.VENUE_CONFIG&&window.VENUE_CONFIG.slug?("."+window.VENUE_CONFIG.slug):"");
 let LS_OK=(()=>{try{localStorage.setItem("__t","1");localStorage.removeItem("__t");return true;}catch(e){return false;}})();
 let lastAuto=null,saveTimer=null,restored=false;
 const hhmm=t=>new Date(t).toLocaleTimeString("ja-JP",{hour:"2-digit",minute:"2-digit",second:"2-digit"});
@@ -1612,6 +1618,14 @@ const MASTER=MSTZ.map(r=>{
   return o;
 });
 let CRS={pref:"",q:"",club:"",a:0,b:1},IME=false;
+/* ゴルフ場専用版では、自コースをあらかじめ選択済みにする（検索し直さなくてよい）。
+   他コースの検索自体は残す。臨時に別会場で使うときの逃げ道として、config を持たない
+   汎用ビルドと同じ機能をそのまま使えるようにしておく方が実務上安全なため。 */
+if(window.VENUE_CONFIG&&window.VENUE_CONFIG.courseId){
+  CRS.club=window.VENUE_CONFIG.courseId;
+  if(typeof window.VENUE_CONFIG.courseFrontIdx==="number") CRS.a=window.VENUE_CONFIG.courseFrontIdx;
+  if(typeof window.VENUE_CONFIG.courseBackIdx==="number") CRS.b=window.VENUE_CONFIG.courseBackIdx;
+}
 const mPrefs=()=>[...new Set(MASTER.map(x=>x.p))];
 const mClubs=()=>{const q=CRS.q?key(CRS.q):"";
   return MASTER.filter(x=>(!CRS.pref||x.p===CRS.pref)&&(!q||x.k.includes(q)));};
@@ -7017,7 +7031,22 @@ document.addEventListener("drop",e=>{
 window.addEventListener("dragover",e=>e.preventDefault());
 window.addEventListener("drop",e=>e.preventDefault());
 
+/* ゴルフ場専用版のブランディングを起動時に反映する。VENUE_CONFIG が無ければ何もしない
+   （共有エンジンとしての従来動作をそのまま維持する）。 */
+function applyVenueBranding(){
+  const v=window.VENUE_CONFIG; if(!v) return;
+  if(v.name){
+    document.title=v.name+"｜CompeMaster Pro";
+    const bm=document.getElementById("brandMark");
+    if(bm) bm.innerHTML=v.logoUrl
+      ? `<img src="${esc(v.logoUrl)}" alt="${esc(v.name)}" style="height:1.5em;vertical-align:middle">`
+      : `${esc(v.name)}<b style="margin-left:.4em">CompeMaster Pro</b>`;
+  }
+  if(v.themeColor) document.documentElement.style.setProperty("--brass",v.themeColor);
+}
+
 (function boot(){
+  applyVenueBranding();
   const a=loadAuto();
   if(a&&a.db&&a.db.meta){DB=migrate(a.db);lastAuto=a.at;restored=a.at;
     const r=recentList()[0]; if(r&&r.name===DB.meta.name) FILENAME=r.file;}

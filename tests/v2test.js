@@ -2452,7 +2452,7 @@ console.log('\n=== 1本のスクロール（2026-09-18、v57：サイドバー�
   T('サイドバーの地の色をページの下端まで届かせる', /body\.work #work\{padding-bottom:0\}\s*#work>\.wrap\{padding-bottom:56px\}/.test(css));
   T('上の帯を固定するのはスマホだけ', /@media screen and \(min-width:761px\)\{#work>\.top\{position:relative\}\}/.test(css)&&/\n\.top\{position:sticky;top:0/.test(css));
   T('本文と表のスクロールバーは地の色（v56のまま）', /@media screen\{\s*html\{scrollbar-color:var\(--rule\) var\(--board\)\}/.test(css));
-  T('タブレットのロゴはサイドバー・ホームと同じ文字のロゴで、押すとホーム', h.includes('<button class="brand" onclick="go(\'home\')" title="ホームへ"><span class="cmark">CompeMaster<b>PRO</b></span></button>'));
+  T('タブレットのロゴはサイドバー・ホームと同じ文字のロゴで、押すとホーム', h.includes('<button class="brand" onclick="go(\'home\')" title="ホームへ"><span class="cmark" id="brandMark">CompeMaster<b>PRO</b></span></button>'));
   T('旧デザインのロゴ（紋章・英字の副題）は残っていない', !/<div class="emblem">/.test(h)&&!h.includes('GOLF EVENT MANAGEMENT SYSTEM'));
   T('スクロールバーを隠している上のタブ列はそのまま', /\.tabs\{[^}]*scrollbar-width:none/.test(h)&&/\.tabs::-webkit-scrollbar\{display:none\}/.test(h));
   T('足元の3つ（ホーム・データ・使い方）は変えていない', ()=>{app.sample();global.flush();const x=app.sideHtml();return /class="sd-foot"/.test(x)&&/ホーム/.test(x)&&/データ/.test(x)&&/使い方/.test(x);});

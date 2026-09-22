@@ -7,7 +7,7 @@
 USBに入れて持ち運べます。ゴルフ場は電波が弱いことがあるためです。
 
 - 公開ページ … https://takumihiramatsu.github.io/CompeMasterPro/
-- 検証スイート … 27本・2316項目（`tests/`）
+- 検証スイート … 28本・2338項目（`tests/`）
 
 ---
 
@@ -53,7 +53,7 @@ cd CompeMasterPro/tests
 for f in *.js; do echo "== $f"; node "$f"; done
 ```
 
-`NG` が0で、`OK` の合計が2316であれば準備完了です。
+`NG` が0で、`OK` の合計が2338であれば準備完了です。
 アプリを触るときは `docs/pc.html` をブラウザで直接開いてください。サーバーは要りません。
 
 ---

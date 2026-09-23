@@ -42,6 +42,7 @@ https://raw.githubusercontent.com/Takumihiramatsu/CompeMasterPro/main/docs/pc.ht
 | **[HANDOVER.md](HANDOVER.md)** | **作業を再開する人。まずこれ。** 何がどこにあり、なぜそうなっているか、次に何をすべきか |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | コードを変更する人。手順・変えてはいけない決めごと・過去の落とし穴 |
 | [docs/README.md](docs/README.md) | アプリを配る人・使う人。置き場所と配布のしかた |
+| [design/README.md](design/README.md) | 画面の見直しをする人。UI再設計のデザイン資料（アプリではない） |
 
 ---
 

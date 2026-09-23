@@ -1,0 +1,766 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<style>
+body{margin:0;background:#e6e4de;font-family:'Hiragino Kaku Gothic ProN','Hiragino Sans','Yu Gothic',Meiryo,sans-serif;color:#15171b}
+a{color:#15171b}a:hover{color:#4a7a00}
+*{box-sizing:border-box}
+</style>
+</helmet>
+
+<div style="padding:40px 48px 24px;display:flex;flex-direction:column;gap:14px;max-width:1280px">
+  <div style="display:flex;align-items:center;gap:12px">
+    <span style="font:600 11px ui-monospace,'SF Mono',Menlo,Consolas,monospace;letter-spacing:.12em;padding:4px 8px;background:#15171b;color:#D9B166;border-radius:4px;white-space:nowrap">DESIGN DOC</span>
+    <span style="font-size:12px;color:#6b7078">CompeMaster Pro ／ UI/UX 再設計 v1</span>
+  </div>
+  <h1 style="margin:0;font-size:30px;font-weight:700;letter-spacing:-.01em">「いつ・何を入れるか」で画面を組み直す</h1>
+  <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px;font-size:13px;line-height:1.7;color:#3a3f47">
+    <div><b style="color:#15171b">課題</b><br>11本の横並びタブ。設定項目が多く、初心者はどのタイミングで何を入力するかが分からない。馬券・GTO・罰金など「遊びのルール」が必須項目と同じ重さで並ぶ。</div>
+    <div><b style="color:#15171b">方針</b><br>すべての画面を <b>準備 → 当日 → 発表</b> の3フェーズに束ね、左ナビをその順で並べる。常に「次にやること」を1つだけ大きく出す。任意のルールは最初は隠し、あとから足せる。データは現行どおり <b>1大会＝1ファイル</b>。ホームは「このファイル」と「別ファイルを開く／前回のファイルからコピー」で構成。</div>
+    <div><b style="color:#15171b">見た目・制約</b><br>配色と書体は現行のまま（深緑 #081810／パネル #10291E／ブラス #D9B166、和文はヒラギノ系システムフォント、数字は等幅）。外部フォントの読み込みなし。変えるのは構造・余白・数字の大きさだけ。</div>
+  </div>
+</div>
+
+<!-- ============ 追加画面（第2ラウンド） ============ -->
+<div style="padding:8px 48px 40px;display:flex;flex-direction:column;gap:40px;border-bottom:1px solid rgba(0,0,0,.08);margin-bottom:24px">
+<div style="display:flex;align-items:baseline;gap:10px"><span style="font:600 10px ui-monospace,'SF Mono',Menlo,Consolas,monospace;padding:3px 7px;background:#15171b;color:#fff;border-radius:4px">2</span><span style="font-size:13px;font-weight:600">追加ルールを入れた状態・発表スクリーン・予想入力</span></div>
+
+<!-- P9 ハブ（追加ルールあり） -->
+<div id="p9" style="display:flex;flex-direction:column;gap:9px">
+  <div style="display:flex;align-items:baseline;gap:8px;font-size:12px;color:#6f8a78"><a href="#p9" style="font:600 10.5px ui-monospace,'SF Mono',Menlo,Consolas,monospace;padding:3px 7px;background:rgba(0,0,0,.1);border-radius:5px;text-decoration:none;color:#15171b">P9</a>大会ハブ — <a href="#p3">P3</a> で馬券・GTO・罰金を入れた状態。当日ナビに「予想入力」「集計」が増える</div>
+  <div data-screen-label="P9 大会ハブ 追加ルールあり" style="width:1280px;height:800px;background:#081810;color:#F4F1E5;border-radius:12px;overflow:hidden;font-family:'Hiragino Kaku Gothic ProN','Hiragino Sans','Yu Gothic',Meiryo,sans-serif;display:grid;grid-template-columns:236px 1fr">
+    <div style="background:#050f0a;border-right:1px solid #163828;padding:22px 14px;display:flex;flex-direction:column;gap:4px;font-size:13.5px">
+      <div style="display:flex;align-items:baseline;gap:5px;padding:0 10px 18px"><span style="font:700 17px ui-monospace,'SF Mono',Menlo,Consolas,monospace;letter-spacing:-.02em">CompeMaster</span><span style="font:700 10px ui-monospace,'SF Mono',Menlo,Consolas,monospace;color:#D9B166;letter-spacing:.1em">PRO</span></div>
+      <div style="background:#10291E;border-radius:10px;padding:10px 12px;margin-bottom:12px"><div style="font-size:11px;color:#93AC9D">ファイル</div><div style="font-size:13px;font-weight:600;margin-top:2px">第12回 秋季 社内コンペ</div><div style="font-size:10.5px;color:#6f8a78;margin-top:2px;font-family:ui-monospace,'SF Mono',Menlo,Consolas,monospace">2026-09-19_秋季.json</div></div>
+      <div style="display:flex;align-items:center;gap:8px;padding:6px 10px 4px;color:#93AC9D;font:600 10.5px ui-monospace,'SF Mono',Menlo,Consolas,monospace;letter-spacing:.12em">1 ／ 準備</div>
+      <div style="display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:9px;background:#163828;color:#F4F1E5"><span style="width:6px;height:6px;border-radius:50%;background:#D9B166"></span>大会ハブ</div>
+      <div style="display:flex;align-items:center;gap:10px;padding:8px 12px;color:#c9d3c8"><span style="width:16px;height:16px;border-radius:50%;background:#163828;color:#D9B166;display:grid;place-items:center;font-size:10px">✓</span>大会設定</div>
+      <div style="display:flex;align-items:center;gap:10px;padding:8px 12px;color:#c9d3c8"><span style="width:16px;height:16px;border-radius:50%;background:#163828;color:#D9B166;display:grid;place-items:center;font-size:10px">✓</span>参加者<span style="margin-left:auto;font:500 12px ui-monospace,'SF Mono',Menlo,Consolas,monospace;color:#93AC9D">24</span></div>
+      <div style="display:flex;align-items:center;gap:10px;padding:8px 12px;color:#c9d3c8"><span style="width:16px;height:16px;border-radius:50%;background:#163828;color:#D9B166;display:grid;place-items:center;font-size:10px">✓</span>組合せ<span style="margin-left:auto;font:500 12px ui-monospace,'SF Mono',Menlo,Consolas,monospace;color:#93AC9D">6/6</span></div>
+      <div style="display:flex;align-items:center;gap:10px;padding:8px 12px;color:#c9d3c8"><span style="width:16px;height:16px;border-radius:50%;border:1.5px solid #F2D024"></span>追加ルール<span style="margin-left:auto;font:500 12px ui-monospace,'SF Mono',Menlo,Consolas,monospace;color:#D9B166">6</span></div>
+      <div style="display:flex;align-items:center;gap:8px;padding:14px 10px 4px;color:#93AC9D;font:600 10.5px ui-monospace,'SF Mono',Menlo,Consolas,monospace;letter-spacing:.12em">2 ／ 当日</div>
+      <div style="display:flex;align-items:center;gap:10px;padding:8px 12px;color:#6f8a78"><span style="width:16px;height:16px;border-radius:50%;border:1.5px solid #2E5944"></span>集金</div>
+      <div style="display:flex;align-items:center;gap:10px;padding:8px 12px;color:#6f8a78;background:rgba(217,177,102,.08);border-radius:9px"><span style="width:16px;height:16px;border-radius:50%;border:1.5px solid #2E5944"></span>予想入力<span style="margin-left:auto;font:600 10px ui-monospace,'SF Mono',Menlo,Consolas,monospace;color:#D9B166;letter-spacing:.08em">NEW</span></div>
+      <div style="display:flex;align-items:center;gap:10px;padding:8px 12px;color:#6f8a78"><span style="width:16px;height:16px;border-radius:50%;border:1.5px solid #2E5944"></span>スコア入力</div>
+      <div style="display:flex;align-items:center;gap:10px;padding:8px 12px;color:#6f8a78"><span style="width:16px;height:16px;border-radius:50%;border:1.5px solid #2E5944"></span>ニアピン・ドラコン</div>
+      <div style="display:flex;align-items:center;gap:10px;padding:8px 12px;color:#6f8a78;background:rgba(217,177,102,.08);border-radius:9px"><span style="width:16px;height:16px;border-radius:50%;border:1.5px solid #2E5944"></span>集計（馬券・GTO）<span style="margin-left:auto;font:600 10px ui-monospace,'SF Mono',Menlo,Consolas,monospace;color:#D9B166;letter-spacing:.08em">NEW</span></div>
+      <div style="display:flex;align-items:center;gap:8px;padding:14px 10px 4px;color:#93AC9D;font:600 10.5px ui-monospace,'SF Mono',Menlo,Consolas,monospace;letter-spacing:.12em">3 ／ 発表</div>
+      <div style="display:flex;align-items:center;gap:10px;padding:8px 12px;color:#6f8a78"><span style="width:16px;height:16px;border-radius:50%;border:1.5px solid #2E5944"></span>順位・表彰</div>
+      <div style="display:flex;align-items:center;gap:10px;padding:8px 12px;color:#6f8a78"><span style="width:16px;height:16px;border-radius:50%;border:1.5px solid #2E5944"></span>結果共有・出力</div>
+    </div>
+    <div style="display:flex;flex-direction:column;min-height:0">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:18px 36px;border-bottom:1px solid #163828">
+        <div style="display:flex;align-items:center;gap:14px"><span style="font-size:17px;font-weight:700">大会ハブ</span><span style="font-size:12.5px;color:#93AC9D;white-space:nowrap">2026.09.19（土）・さくら台CC 東・24名 6組</span></div>
+        <div style="display:flex;align-items:center;gap:14px"><span style="font-size:12px;color:#93AC9D">自動保存 21:10 ●</span><div style="display:flex;background:#10291E;border:1px solid #2E5944;border-radius:999px;padding:3px;font-size:12.5px"><span style="padding:6px 14px;border-radius:999px;background:#D9B166;color:#081810;font-weight:700">準備中</span><span style="padding:6px 14px;color:#93AC9D">当日</span><span style="padding:6px 14px;color:#93AC9D">発表</span></div></div>
+      </div>
+      <div style="padding:32px 36px;display:grid;grid-template-columns:1fr 340px;gap:24px;flex:1;min-height:0">
+        <div style="display:flex;flex-direction:column;gap:20px">
+          <div style="background:#D9B166;color:#081810;border-radius:18px;padding:26px 28px;display:grid;grid-template-columns:1fr auto;gap:20px;align-items:center">
+            <div><div style="font:600 11px ui-monospace,'SF Mono',Menlo,Consolas,monospace;letter-spacing:.12em;opacity:.7">次にやること</div><div style="font-size:26px;font-weight:700;margin-top:6px;letter-spacing:-.01em">馬券の「枠」を決める</div><div style="font-size:13.5px;margin-top:6px;opacity:.8">組をそのまま枠にするか、2人ずつの枠にするか。組合せが決まったので今なら1クリックです。</div></div>
+            <span style="background:#081810;color:#F4F1E5;font-weight:700;border-radius:12px;padding:15px 22px;font-size:14.5px;white-space:nowrap">枠を決める →</span>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px">
+            <div style="background:#10291E;border:1px solid #2E5944;border-radius:14px;padding:18px 20px"><div style="font-size:12px;color:#93AC9D">馬券（枠連）</div><div style="font:700 28px/1.1 ui-monospace,'SF Mono',Menlo,Consolas,monospace;margin-top:8px">¥200<span style="font-size:13px;color:#93AC9D;font-weight:500;font-family:'Hiragino Kaku Gothic ProN','Hiragino Sans','Yu Gothic',Meiryo,sans-serif"> ／口</span></div><div style="font-size:12px;color:#F2D024;margin-top:6px">● 枠の作り方が未設定</div></div>
+            <div style="background:#10291E;border:1px solid #2E5944;border-radius:14px;padding:18px 20px"><div style="font-size:12px;color:#93AC9D">GTO（下位予想）</div><div style="font:700 28px/1.1 ui-monospace,'SF Mono',Menlo,Consolas,monospace;margin-top:8px">¥500<span style="font-size:13px;color:#93AC9D;font-weight:500;font-family:'Hiragino Kaku Gothic ProN','Hiragino Sans','Yu Gothic',Meiryo,sans-serif"> ／口・3連複</span></div><div style="font-size:12px;color:#D9B166;margin-top:6px">✓ 設定済</div></div>
+            <div style="background:#10291E;border:1px solid #2E5944;border-radius:14px;padding:18px 20px"><div style="font-size:12px;color:#93AC9D">罰金</div><div style="font:700 28px/1.1 ui-monospace,'SF Mono',Menlo,Consolas,monospace;margin-top:8px">¥1,000<span style="font-size:13px;color:#93AC9D;font-weight:500;font-family:'Hiragino Kaku Gothic ProN','Hiragino Sans','Yu Gothic',Meiryo,sans-serif"> ／名</span></div><div style="font-size:12px;color:#93AC9D;margin-top:6px">得票上位3名に負けた人が支払う</div></div>
+          </div>
+          <div style="background:#10291E;border:1px solid #2E5944;border-radius:14px;padding:20px 22px;display:flex;flex-direction:column;gap:12px">
+            <div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font-size:14px;font-weight:700">準備チェックリスト</span><span style="font-size:12px;color:#93AC9D">7 / 9</span></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px 24px;font-size:13.5px">
+              <div style="display:flex;gap:10px;align-items:center;color:#93AC9D"><span style="color:#D9B166">✓</span>大会名・会場・日付</div>
+              <div style="display:flex;gap:10px;align-items:center;color:#93AC9D"><span style="color:#D9B166">✓</span>競技方法（新ペリア）</div>
+              <div style="display:flex;gap:10px;align-items:center;color:#93AC9D"><span style="color:#D9B166">✓</span>参加者 24名</div>
+              <div style="display:flex;gap:10px;align-items:center;color:#93AC9D"><span style="color:#D9B166">✓</span>組合せ・スタート時刻</div>
+              <div style="display:flex;gap:10px;align-items:center;color:#93AC9D"><span style="color:#D9B166">✓</span>ニアピン・ドラコンのホール</div>
+              <div style="display:flex;gap:10px;align-items:center;color:#93AC9D"><span style="color:#D9B166">✓</span>順位賞の金額</div>
+              <div style="display:flex;gap:10px;align-items:center;color:#93AC9D"><span style="color:#D9B166">✓</span>GTO・罰金のルール</div>
+              <div style="display:flex;gap:10px;align-items:center"><span style="width:14px;height:14px;border-radius:50%;border:1.5px solid #F2D024"></span>馬券の枠の作り方</div>
+              <div style="display:flex;gap:10px;align-items:center"><span style="width:14px;height:14px;border-radius:50%;border:1.5px solid #2E5944"></span>スタート表・予想用紙を印刷</div>
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:16px">
+          <div style="background:#10291E;border:1px solid #2E5944;border-radius:14px;padding:20px 22px;display:flex;flex-direction:column;gap:12px">
+            <div style="font:600 11px ui-monospace,'SF Mono',Menlo,Consolas,monospace;letter-spacing:.12em;color:#93AC9D">使っている追加ルール</div>
+            <div style="display:flex;flex-wrap:wrap;gap:6px"><span style="border:1px solid #D9B166;color:#D9B166;border-radius:999px;padding:5px 11px;font-size:12px">ニアピン ×4</span><span style="border:1px solid #D9B166;color:#D9B166;border-radius:999px;padding:5px 11px;font-size:12px">ドラコン ×2</span><span style="border:1px solid #D9B166;color:#D9B166;border-radius:999px;padding:5px 11px;font-size:12px">賞金・収支</span><span style="border:1px solid #D9B166;color:#D9B166;border-radius:999px;padding:5px 11px;font-size:12px">馬券</span><span style="border:1px solid #D9B166;color:#D9B166;border-radius:999px;padding:5px 11px;font-size:12px">GTO</span><span style="border:1px solid #D9B166;color:#D9B166;border-radius:999px;padding:5px 11px;font-size:12px">罰金</span><span style="border:1px dashed #3E7058;color:#93AC9D;border-radius:999px;padding:5px 11px;font-size:12px">＋ 足す</span></div>
+            <div style="font-size:12px;color:#93AC9D;line-height:1.6">馬券とGTOを入れたので、当日に <b style="color:#F4F1E5">予想入力</b> と <b style="color:#F4F1E5">集計</b> が増えました。外すと元に戻ります。</div>
+          </div>
+          <div style="background:#10291E;border:1px solid #2E5944;border-radius:14px;padding:20px 22px;display:flex;flex-direction:column;gap:10px">
+            <div style="font:600 11px ui-monospace,'SF Mono',Menlo,Consolas,monospace;letter-spacing:.12em;color:#93AC9D">当日の流れ（6つ）</div>
+            <div style="display:flex;flex-direction:column;gap:8px;font-size:13.5px">
+              <div style="display:flex;gap:10px"><span style="font:700 13px ui-monospace,'SF Mono',Menlo,Consolas,monospace;color:#93AC9D;width:14px">1</span>集金 — 参加費＋予想の口数</div>
+              <div style="display:flex;gap:10px;color:#D9B166"><span style="font:700 13px ui-monospace,'SF Mono',Menlo,Consolas,monospace;width:14px">2</span>予想入力 — スタート前に締切</div>
+              <div style="display:flex;gap:10px"><span style="font:700 13px ui-monospace,'SF Mono',Menlo,Consolas,monospace;color:#93AC9D;width:14px">3</span>スコア入力</div>
+              <div style="display:flex;gap:10px"><span style="font:700 13px ui-monospace,'SF Mono',Menlo,Consolas,monospace;color:#93AC9D;width:14px">4</span>ニアピン・ドラコン</div>
+              <div style="display:flex;gap:10px;color:#D9B166"><span style="font:700 13px ui-monospace,'SF Mono',Menlo,Consolas,monospace;width:14px">5</span>集計 — 当選・罰金は自動</div>
+              <div style="display:flex;gap:10px"><span style="font:700 13px ui-monospace,'SF Mono',Menlo,Consolas,monospace;color:#93AC9D;width:14px">6</span>発表</div>
+            </div>
+          </div>
+          <div style="background:#10291E;border:1px solid #2E5944;border-radius:14px;padding:18px 20px;display:flex;flex-direction:column;gap:6px"><div style="font-size:12px;color:#93AC9D">集金の見込み（ひとり）</div><div style="font:700 26px/1 ui-monospace,'SF Mono',Menlo,Consolas,monospace">¥3,700</div><div style="font-size:12px;color:#93AC9D;line-height:1.6">参加費 1,200 ＋ 馬券 5口 1,000 ＋ GTO 3口 1,500。100円単位に丸め。</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- P10 予想入力 -->
+<div id="p10" style="display:flex;flex-direction:column;gap:9px">
+  <div style="display:flex;align-items:baseline;gap:8px;font-size:12px;color:#6f8a78"><a href="#p10" style="font:600 10.5px ui-monospace,'SF Mono',Menlo,Consolas,monospace;padding:3px 7px;background:rgba(0,0,0,.1);border-radius:5px;text-decoration:none;color:#15171b">P10</a>予想入力（当日モード）— 馬券とGTOを1画面で切替。左で選び、右に人気が積み上がる</div>
+  <div data-screen-label="P10 予想入力" style="width:1280px;height:800px;background:#081810;color:#F4F1E5;border-radius:12px;overflow:hidden;font-family:'Hiragino Kaku Gothic ProN','Hiragino Sans','Yu Gothic',Meiryo,sans-serif;display:grid;grid-template-columns:236px 1fr">
+    <div style="background:#050f0a;border-right:1px solid #163828;padding:22px 14px;display:flex;flex-direction:column;gap:6px;font-size:13.5px">
+      <div style="display:flex;align-items:baseline;gap:5px;padding:0 10px 18px"><span style="font:700 17px ui-monospace,'SF Mono',Menlo,Consolas,monospace;letter-spacing:-.02em">CompeMaster</span><span style="font:700 10px ui-monospace,'SF Mono',Menlo,Consolas,monospace;color:#D9B166;letter-spacing:.1em">PRO</span></div>
+      <div style="background:#10291E;border-radius:10px;padding:10px 12px;margin-bottom:14px"><div style="font-size:11px;color:#93AC9D">ファイル</div><div style="font-size:13px;font-weight:600;margin-top:2px">第12回 秋季 社内コンペ</div><div style="font-size:10.5px;color:#6f8a78;margin-top:2px;font-family:ui-monospace,'SF Mono',Menlo,Consolas,monospace">2026-09-19_秋季.json</div></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-radius:9px;color:#93AC9D;font-size:12.5px;background:#081810;border:1px solid #163828"><span><span style="color:#D9B166">✓</span> 準備 4項目</span><span>▸</span></div>
+      <div style="display:flex;align-items:center;gap:8px;padding:16px 10px 4px;color:#D9B166;font:600 10.5px ui-monospace,'SF Mono',Menlo,Consolas,monospace;letter-spacing:.12em">2 ／ 当日 ・ NOW</div>
+      <div style="display:flex;align-items:center;gap:10px;padding:9px 12px;color:#c9d3c8"><span style="width:16px;height:16px;border-radius:50%;background:#163828;color:#D9B166;display:grid;place-items:center;font-size:10px">✓</span>集金<span style="margin-left:auto;font:500 12px ui-monospace,'SF Mono',Menlo,Consolas,monospace;color:#93AC9D">24/24</span></div>
+      <div style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:9px;background:#163828;color:#F4F1E5"><span style="width:6px;height:6px;border-radius:50%;background:#D9B166"></span>予想入力<span style="margin-left:auto;font:500 12px ui-monospace,'SF Mono',Menlo,Consolas,monospace;color:#F2D024">17/24</span></div>
+      <div style="display:flex;align-items:center;gap:10px;padding:9px 12px;color:#c9d3c8"><span style="width:16px;height:16px;border-radius:50%;border:1.5px solid #2E5944"></span>スコア入力</div>
+      <div style="display:flex;align-items:center;gap:10px;padding:9px 12px;color:#c9d3c8"><span style="width:16px;height:16px;border-radius:50%;border:1.5px solid #2E5944"></span>ニアピン・ドラコン</div>
+      <div style="display:flex;align-items:center;gap:10px;padding:9px 12px;color:#c9d3c8"><span style="width:16px;height:16px;border-radius:50%;border:1.5px solid #2E5944"></span>集計（馬券・GTO）</div>
+      <div style="display:flex;align-items:center;gap:8px;padding:16px 10px 4px;color:#93AC9D;font:600 10.5px ui-monospace,'SF Mono',Menlo,Consolas,monospace;letter-spacing:.12em">3 ／ 発表</div>
+      <div style="display:flex;align-items:center;gap:10px;padding:9px 12px;color:#6f8a78"><span style="width:16px;height:16px;border-radius:50%;border:1.5px solid #2E5944"></span>順位・表彰</div>
+      <div style="display:flex;align-items:center;gap:10px;padding:9px 12px;color:#6f8a78"><span style="width:16px;height:16px;border-radius:50%;border:1.5px solid #2E5944"></span>結果共有・出力</div>
+      <div style="margin-top:auto;background:#10291E;border-radius:10px;padding:12px 14px;font-size:12px;color:#93AC9D;line-height:1.6">締切の目安：1組スタート 08:00。締め切ると入力欄がロックされます。</div>
+    </div>
+    <div style="display:flex;flex-direction:column;min-height:0">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:18px 36px;border-bottom:1px solid #163828">
+        <div style="display:flex;align-items:center;gap:18px"><span style="font-size:17px;font-weight:700">予想入力</span><div style="display:flex;background:#10291E;border:1px solid #2E5944;border-radius:10px;padding:3px;font-size:13px"><span style="padding:7px 16px;border-radius:8px;background:#F4F1E5;color:#081810;font-weight:700">馬券（枠連）</span><span style="padding:7px 16px;color:#93AC9D">GTO（下位予想）</span></div></div>
+        <div style="display:flex;align-items:center;gap:14px"><span style="font-size:12.5px;color:#93AC9D">締切まで <b style="font:700 16px ui-monospace,'SF Mono',Menlo,Consolas,monospace;color:#F2D024">12</b> 分</span><span style="border:1px solid #2E5944;border-radius:10px;padding:9px 14px;font-size:13px">紙の予想を貼り付け</span><span style="background:#D9B166;color:#081810;font-weight:700;border-radius:10px;padding:9px 16px;font-size:13px">締め切る</span></div>
+      </div>
+      <div style="padding:24px 36px;display:grid;grid-template-columns:1fr 340px;gap:20px;flex:1;min-height:0">
+        <div style="display:flex;flex-direction:column;gap:14px;min-height:0">
+          <div style="background:#10291E;border:1px solid #2E5944;border-radius:14px;padding:20px 22px;display:flex;flex-direction:column;gap:16px">
+            <div style="display:flex;flex-direction:column;gap:8px"><span style="font-size:12px;color:#93AC9D">枠の組合せ — 2つ選ぶ（同じ枠でもOK）</span>
+              <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:8px">
+                <div style="background:#081810;border:1px solid #2E5944;border-radius:10px;padding:10px 8px;text-align:center"><div style="font:700 20px ui-monospace,'SF Mono',Menlo,Consolas,monospace">1</div><div style="font-size:11px;color:#93AC9D;margin-top:2px;white-space:nowrap">佐藤 ほか3名</div></div>
+                <div style="background:#081810;border:1px solid #2E5944;border-radius:10px;padding:10px 8px;text-align:center"><div style="font:700 20px ui-monospace,'SF Mono',Menlo,Consolas,monospace">2</div><div style="font-size:11px;color:#93AC9D;margin-top:2px;white-space:nowrap">伊藤 ほか3名</div></div>
+                <div style="background:#D9B166;color:#081810;border:1px solid #D9B166;border-radius:10px;padding:10px 8px;text-align:center"><div style="font:700 20px ui-monospace,'SF Mono',Menlo,Consolas,monospace">3</div><div style="font-size:11px;opacity:.75;margin-top:2px;white-space:nowrap">小林 ほか3名</div></div>
+                <div style="background:#081810;border:1px solid #2E5944;border-radius:10px;padding:10px 8px;text-align:center"><div style="font:700 20px ui-monospace,'SF Mono',Menlo,Consolas,monospace">4</div><div style="font-size:11px;color:#93AC9D;margin-top:2px;white-space:nowrap">加藤 ほか3名</div></div>
+                <div style="background:#D9B166;color:#081810;border:1px solid #D9B166;border-radius:10px;padding:10px 8px;text-align:center"><div style="font:700 20px ui-monospace,'SF Mono',Menlo,Consolas,monospace">5</div><div style="font-size:11px;opacity:.75;margin-top:2px;white-space:nowrap">林 ほか3名</div></div>
+                <div style="background:#081810;border:1px solid #2E5944;border-radius:10px;padding:10px 8px;text-align:center"><div style="font:700 20px ui-monospace,'SF Mono',Menlo,Consolas,monospace">6</div><div style="font-size:11px;color:#93AC9D;margin-top:2px;white-space:nowrap">石川 ほか3名</div></div>
+              </div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 150px 190px;gap:16px;align-items:end">
+              <div style="display:flex;flex-direction:column;gap:8px"><span style="font-size:12px;color:#93AC9D">投票者 <span style="color:#6f8a78">— 2組 ・ 5口まで（集金済）・ 残り 2口</span></span><div style="background:#081810;border:1px solid #2E5944;border-radius:10px;padding:11px 14px;font-size:15px;font-weight:600;display:flex;justify-content:space-between"><span>渡辺 直樹</span><span style="color:#93AC9D">▾</span></div></div>
+              <div style="display:flex;flex-direction:column;gap:8px"><span style="font-size:12px;color:#93AC9D">口数</span><div style="display:flex;background:#081810;border:1px solid #2E5944;border-radius:10px;align-items:center"><span style="padding:11px 14px;color:#93AC9D">−</span><span style="flex:1;text-align:center;font:700 18px ui-monospace,'SF Mono',Menlo,Consolas,monospace">1</span><span style="padding:11px 14px;color:#93AC9D">＋</span></div></div>
+              <span style="background:#F4F1E5;color:#081810;font-weight:700;border-radius:10px;padding:13px;font-size:13px;text-align:center;white-space:nowrap">3-5 を追加（Enter）</span>
+            </div>
+          </div>
+          <div style="background:#10291E;border:1px solid #2E5944;border-radius:14px;overflow:hidden;display:flex;flex-direction:column;flex:1;min-height:0">
+            <div style="display:grid;grid-template-columns:1fr 100px 70px 90px 60px;gap:12px;padding:12px 18px;font-size:11.5px;color:#93AC9D;border-bottom:1px solid #2E5944"><span>投票者</span><span>買い目</span><span style="text-align:right">口数</span><span style="text-align:right">金額</span><span></span></div>
+            <div style="display:grid;grid-template-columns:1fr 100px 70px 90px 60px;gap:12px;padding:12px 18px;font-size:14px;border-bottom:1px solid #163828;align-items:center;background:#163828"><span style="font-weight:600">渡辺 直樹</span><span style="font:600 15px ui-monospace,'SF Mono',Menlo,Consolas,monospace">2-3</span><span style="font:600 15px ui-monospace,'SF Mono',Menlo,Consolas,monospace;text-align:right">2</span><span style="font:500 14px ui-monospace,'SF Mono',Menlo,Consolas,monospace;text-align:right;color:#c9d3c8">¥400</span><span style="text-align:right;color:#6f8a78">×</span></div>
+            <div style="display:grid;grid-template-columns:1fr 100px 70px 90px 60px;gap:12px;padding:12px 18px;font-size:14px;border-bottom:1px solid #163828;align-items:center;background:#163828"><span style="font-weight:600">渡辺 直樹</span><span style="font:600 15px ui-monospace,'SF Mono',Menlo,Consolas,monospace">1-1</span><span style="font:600 15px ui-monospace,'SF Mono',Menlo,Consolas,monospace;text-align:right">1</span><span style="font:500 14px ui-monospace,'SF Mono',Menlo,Consolas,monospace;text-align:right;color:#c9d3c8">¥200</span><span style="text-align:right;color:#6f8a78">×</span></div>
+            <div style="display:grid;grid-template-columns:1fr 100px 70px 90px 60px;gap:12px;padding:12px 18px;font-size:14px;border-bottom:1px solid #163828;align-items:center"><span style="font-weight:600;color:#c9d3c8">山本 恵子</span><span style="font:600 15px ui-monospace,'SF Mono',Menlo,Consolas,monospace">3-5</span><span style="font:600 15px ui-monospace,'SF Mono',Menlo,Consolas,monospace;text-align:right">3</span><span style="font:500 14px ui-monospace,'SF Mono',Menlo,Consolas,monospace;text-align:right;color:#c9d3c8">¥600</span><span style="text-align:right;color:#6f8a78">×</span></div>
+            <div style="display:grid;grid-template-columns:1fr 100px 70px 90px 60px;gap:12px;padding:12px 18px;font-size:14px;border-bottom:1px solid #163828;align-items:center"><span style="font-weight:600;color:#c9d3c8">山本 恵子</span><span style="font:600 15px ui-monospace,'SF Mono',Menlo,Consolas,monospace">1-3</span><span style="font:600 15px ui-monospace,'SF Mono',Menlo,Consolas,monospace;text-align:right">2</span><span style="font:500 14px ui-monospace,'SF Mono',Menlo,Consolas,monospace;text-align:right;color:#c9d3c8">¥400</span><span style="text-align:right;color:#6f8a78">×</span></div>
+            <div style="display:grid;grid-template-columns:1fr 100px 70px 90px 60px;gap:12px;padding:12px 18px;font-size:14px;border-bottom:1px solid #163828;align-items:center"><span style="font-weight:600;color:#c9d3c8">伊藤 隆</span><span style="font:600 15px ui-monospace,'SF Mono',Menlo,Consolas,monospace">2-4</span><span style="font:600 15px ui-monospace,'SF Mono',Menlo,Consolas,monospace;text-align:right">5</span><span style="font:500 14px ui-monospace,'SF Mono',Menlo,Consolas,monospace;text-align:right;color:#c9d3c8">¥1,000</span><span style="text-align:right;color:#6f8a78">×</span></div>
+            <div style="padding:12px 18px;font-size:12.5px;color:#93AC9D;margin-top:auto;display:flex;justify-content:space-between;border-top:1px solid #2E5944"><span style="white-space:nowrap">61件</span><span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0">未投票 7名：加藤・松本・井上 …</span></div>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <div style="background:#10291E;border:1px solid #2E5944;border-radius:14px;padding:18px 20px;display:flex;flex-direction:column;gap:12px">
+            <div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font-size:13.5px;font-weight:700">枠の人気</span><span style="font-size:11.5px;color:#93AC9D">マスの数字は口数</span></div>
+            <div style="display:grid;grid-template-columns:28px repeat(6,1fr);gap:4px;font:600 12px ui-monospace,'SF Mono',Menlo,Consolas,monospace;text-align:center">
+              <span></span><span style="color:#93AC9D">1</span><span style="color:#93AC9D">2</span><span style="color:#93AC9D">3</span><span style="color:#93AC9D">4</span><span style="color:#93AC9D">5</span><span style="color:#93AC9D">6</span>
+              <span style="color:#93AC9D;align-self:center">1</span><span style="background:#2E5944;border-radius:6px;padding:9px 0">3</span><span style="background:#163828;border-radius:6px;padding:9px 0;color:#6f8a78">1</span><span style="background:#5c4a22;border-radius:6px;padding:9px 0">8</span><span style="background:#163828;border-radius:6px;padding:9px 0;color:#6f8a78">2</span><span style="background:#2E5944;border-radius:6px;padding:9px 0">4</span><span style="background:#163828;border-radius:6px;padding:9px 0;color:#6f8a78">0</span>
+              <span style="color:#93AC9D;align-self:center">2</span><span></span><span style="background:#163828;border-radius:6px;padding:9px 0;color:#6f8a78">2</span><span style="background:#2E5944;border-radius:6px;padding:9px 0">5</span><span style="background:#8A7040;border-radius:6px;padding:9px 0">11</span><span style="background:#163828;border-radius:6px;padding:9px 0;color:#6f8a78">1</span><span style="background:#2E5944;border-radius:6px;padding:9px 0">3</span>
+              <span style="color:#93AC9D;align-self:center">3</span><span></span><span></span><span style="background:#163828;border-radius:6px;padding:9px 0;color:#6f8a78">1</span><span style="background:#2E5944;border-radius:6px;padding:9px 0">4</span><span style="background:#D9B166;color:#081810;border-radius:6px;padding:9px 0">7</span><span style="background:#163828;border-radius:6px;padding:9px 0;color:#6f8a78">2</span>
+              <span style="color:#93AC9D;align-self:center">4</span><span></span><span></span><span></span><span style="background:#163828;border-radius:6px;padding:9px 0;color:#6f8a78">0</span><span style="background:#2E5944;border-radius:6px;padding:9px 0">3</span><span style="background:#163828;border-radius:6px;padding:9px 0;color:#6f8a78">2</span>
+              <span style="color:#93AC9D;align-self:center">5</span><span></span><span></span><span></span><span></span><span style="background:#163828;border-radius:6px;padding:9px 0;color:#6f8a78">1</span><span style="background:#163828;border-radius:6px;padding:9px 0;color:#6f8a78">1</span>
+              <span style="color:#93AC9D;align-self:center">6</span><span></span><span></span><span></span><span></span><span></span><span style="background:#163828;border-radius:6px;padding:9px 0;color:#6f8a78">0</span>
+            </div>
+            <div style="font-size:12px;color:#93AC9D;line-height:1.6">一番人気は <b style="color:#F4F1E5">2-4（11口）</b>。いま選んでいる 3-5 は7口。</div>
+          </div>
+          <div style="background:#10291E;border:1px solid #2E5944;border-radius:14px;padding:18px 20px;display:flex;flex-direction:column;gap:6px"><div style="font-size:12px;color:#93AC9D">馬券 売上</div><div style="font:700 26px/1 ui-monospace,'SF Mono',Menlo,Consolas,monospace">¥12,200<span style="font-size:13px;color:#93AC9D;font-weight:500"> ／ 61口</span></div><div style="font-size:12px;color:#93AC9D;line-height:1.6">当選枠の口数で等分。当日の集計は自動です。</div></div>
+          <div style="background:#10291E;border:1px solid #2E5944;border-radius:14px;padding:18px 20px;display:flex;flex-direction:column;gap:8px"><div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font-size:13.5px;font-weight:700">GTO の進み</span><span style="font-size:12px;color:#F2D024">14 / 24</span></div><div style="font-size:12px;color:#93AC9D;line-height:1.6">必ず「最下位 → 下位2位 → 下位3位」の順に3人選びます。上のタブで切替。</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- P11 発表スクリーン -->
+<div id="p11" style="display:flex;flex-direction:column;gap:9px">
+  <div style="display:flex;align-items:baseline;gap:8px;font-size:12px;color:#6f8a78"><a href="#p11" style="font:600 10.5px ui-monospace,'SF Mono',Menlo,Consolas,monospace;padding:3px 7px;background:rgba(0,0,0,.1);border-radius:5px;text-decoration:none;color:#15171b">P11</a>発表スクリーン 1920×1080 — プロジェクター用。1枚1受賞者、数字を最大に。HUDは幹事の手元にだけ</div>
+  <div data-screen-label="P11 発表スクリーン" style="width:1920px;height:1080px;background:#050f0a;color:#F4F1E5;border-radius:12px;overflow:hidden;font-family:'Hiragino Kaku Gothic ProN','Hiragino Sans','Yu Gothic',Meiryo,sans-serif;position:relative;display:flex;flex-direction:column">
+    <div style="position:absolute;inset:0;background:radial-gradient(70% 60% at 50% 110%,rgba(217,177,102,.16),transparent 70%)"></div>
+    <div style="position:absolute;top:56px;left:80px;right:80px;display:flex;justify-content:space-between;align-items:center;font-size:24px;color:#93AC9D"><span>第12回 秋季 社内コンペ ・ 2026.09.19 ・ さくら台CC 東コース</span><span style="font:600 22px ui-monospace,'SF Mono',Menlo,Consolas,monospace;letter-spacing:.1em">5 / 9</span></div>
+    <div style="position:relative;flex:1;display:grid;grid-template-columns:1fr 1fr;align-items:center;padding:0 120px;gap:60px">
+      <div style="display:flex;flex-direction:column;gap:24px">
+        <div style="font:600 26px ui-monospace,'SF Mono',Menlo,Consolas,monospace;letter-spacing:.2em;color:#D9B166">RANK</div>
+        <div style="display:flex;align-items:baseline;gap:20px"><span style="font:700 360px/0.9 ui-monospace,'SF Mono',Menlo,Consolas,monospace;letter-spacing:-.06em">3</span><span style="font-size:72px;font-weight:700;color:#93AC9D">位</span></div>
+        <div style="font-size:30px;color:#93AC9D">ネット同スコアのため、年長者が上位</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:36px;border-left:2px solid #2E5944;padding-left:80px">
+        <div><div style="font-size:30px;color:#93AC9D">営業1部</div><div style="font-size:112px;font-weight:700;letter-spacing:-.02em;line-height:1.1;margin-top:8px">高橋 由美</div></div>
+        <div style="display:flex;gap:56px">
+          <div><div style="font-size:24px;color:#93AC9D">ネット</div><div style="font:700 96px/1 ui-monospace,'SF Mono',Menlo,Consolas,monospace;color:#D9B166;margin-top:8px">77.6</div></div>
+          <div><div style="font-size:24px;color:#93AC9D">グロス</div><div style="font:700 96px/1 ui-monospace,'SF Mono',Menlo,Consolas,monospace;margin-top:8px">98</div></div>
+          <div><div style="font-size:24px;color:#93AC9D">HDCP</div><div style="font:700 96px/1 ui-monospace,'SF Mono',Menlo,Consolas,monospace;margin-top:8px">20.4</div></div>
+        </div>
+        <div style="display:inline-flex;align-self:flex-start;align-items:center;gap:20px;background:#10291E;border:1px solid #2E5944;border-radius:20px;padding:22px 36px"><span style="font-size:30px;color:#93AC9D">3位賞</span><span style="font:700 52px/1 ui-monospace,'SF Mono',Menlo,Consolas,monospace">¥3,000</span></div>
+      </div>
+    </div>
+    <div style="position:relative;display:flex;justify-content:space-between;align-items:center;padding:0 80px 48px;color:#6f8a78;font-size:22px">
+      <span>← 2位 佐藤 健一</span>
+      <div style="display:flex;gap:12px;align-items:center"><span style="width:12px;height:12px;border-radius:50%;background:#3E7058"></span><span style="width:12px;height:12px;border-radius:50%;background:#3E7058"></span><span style="width:12px;height:12px;border-radius:50%;background:#3E7058"></span><span style="width:12px;height:12px;border-radius:50%;background:#3E7058"></span><span style="width:12px;height:12px;border-radius:50%;background:#D9B166"></span><span style="width:12px;height:12px;border-radius:50%;background:#3E7058"></span><span style="width:12px;height:12px;border-radius:50%;background:#3E7058"></span><span style="width:12px;height:12px;border-radius:50%;background:#3E7058"></span><span style="width:12px;height:12px;border-radius:50%;background:#3E7058"></span></div>
+      <span>次：2位 →</span>
+    </div>
+  </div>
+  <div style="font-size:12px;color:#6f8a78;max-width:1280px;line-height:1.7">幹事のPC側には別ウィンドウで HUD（作業画面にもどる／← → めくる／F 全画面／M 音）を出し、会場スクリーンには枠線・ボタン類を一切出さない。</div>
+</div>
+</div>
+
+<!-- ============ 画面遷移 ============ -->
+<div style="padding:16px 48px 40px">
+  <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:16px"><a href="#flow" id="flow" style="font:600 10.5px ui-monospace,'SF Mono',Menlo,Consolas,monospace;padding:3px 7px;background:rgba(0,0,0,.1);border-radius:5px;text-decoration:none">F1</a><span style="font-size:13px;font-weight:600">画面遷移図 — 3フェーズ＋いつでも戻れる</span></div>
+  <div style="width:1280px;background:#081810;border-radius:12px;padding:32px;color:#F4F1E5;display:flex;flex-direction:column;gap:24px">
+    <div style="display:grid;grid-template-columns:200px 36px 1fr 36px 1fr 36px 1fr;gap:0;align-items:start">
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div style="font:600 11px ui-monospace,'SF Mono',Menlo,Consolas,monospace;letter-spacing:.12em;color:#93AC9D">ENTRY</div>
+        <div style="background:#D9B166;color:#081810;border-radius:12px;padding:14px 16px;font-weight:700;font-size:15px"><a href="#p1" style="color:inherit;text-decoration:none">ホーム</a><div style="font-size:11.5px;font-weight:500;opacity:.75;margin-top:3px">大会一覧・つづきから</div></div>
+        <div style="border:1px dashed #3E7058;border-radius:12px;padding:12px 16px;font-size:13px;color:#c9d3c8"><a href="#p2" style="color:inherit;text-decoration:none">大会作成ウィザード</a><div style="font-size:11px;color:#93AC9D;margin-top:3px">3ステップ・必須は4項目だけ</div></div>
+        <div style="border:1px solid #2E5944;border-radius:12px;padding:12px 16px;font-size:13px;color:#c9d3c8">コースマスタ<div style="font-size:11px;color:#93AC9D;margin-top:3px">会場を選ぶとパーが入る</div></div>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:center;height:64px;color:#D9B166;font-size:22px">→</div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div style="display:flex;align-items:center;gap:8px"><span style="font:700 13px ui-monospace,'SF Mono',Menlo,Consolas,monospace;width:22px;height:22px;border-radius:50%;background:#163828;display:grid;place-items:center">1</span><span style="font:600 11px ui-monospace,'SF Mono',Menlo,Consolas,monospace;letter-spacing:.12em;color:#93AC9D">準備 ／ PREP</span></div>
+        <div style="background:#10291E;border:1px solid #2E5944;border-radius:12px;padding:12px 16px;font-size:13.5px"><a href="#p4" style="color:inherit;text-decoration:none">大会ハブ（進み具合）</a></div>
+        <div style="background:#10291E;border:1px solid #2E5944;border-radius:12px;padding:12px 16px;font-size:13.5px"><a href="#p5" style="color:inherit;text-decoration:none">参加者</a><span style="color:#93AC9D;font-size:11.5px"> ― Excel貼り付け</span></div>
+        <div style="background:#10291E;border:1px solid #2E5944;border-radius:12px;padding:12px 16px;font-size:13.5px"><a href="#p6" style="color:inherit;text-decoration:none">組合せ</a><span style="color:#93AC9D;font-size:11.5px"> ― ドラッグ・自動割当</span></div>
+        <div style="background:#10291E;border:1px dashed #3E7058;border-radius:12px;padding:12px 16px;font-size:13px;color:#c9d3c8">追加ルール（任意）<div style="font-size:11px;color:#93AC9D;margin-top:3px">馬券・GTO・罰金・団体・抽選</div></div>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:center;height:64px;color:#D9B166;font-size:22px">→</div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div style="display:flex;align-items:center;gap:8px"><span style="font:700 13px ui-monospace,'SF Mono',Menlo,Consolas,monospace;width:22px;height:22px;border-radius:50%;background:#163828;display:grid;place-items:center">2</span><span style="font:600 11px ui-monospace,'SF Mono',Menlo,Consolas,monospace;letter-spacing:.12em;color:#93AC9D">当日 ／ DAY</span></div>
+        <div style="background:#10291E;border:1px solid #2E5944;border-radius:12px;padding:12px 16px;font-size:13.5px">集金<span style="color:#93AC9D;font-size:11.5px"> ― 受け取ったらチェック</span></div>
+        <div style="background:#10291E;border:1px solid #2E5944;border-radius:12px;padding:12px 16px;font-size:13.5px"><a href="#p7" style="color:inherit;text-decoration:none">スコア入力</a><span style="color:#93AC9D;font-size:11.5px"> ― 3つ入れて○</span></div>
+        <div style="background:#10291E;border:1px solid #2E5944;border-radius:12px;padding:12px 16px;font-size:13.5px">ニアピン・ドラコン</div>
+        <div style="background:#10291E;border:1px dashed #3E7058;border-radius:12px;padding:12px 16px;font-size:13px;color:#c9d3c8">予想入力・集計<div style="font-size:11px;color:#93AC9D;margin-top:3px">馬券・GTOを使う時だけ現れる</div></div>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:center;height:64px;color:#D9B166;font-size:22px">→</div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div style="display:flex;align-items:center;gap:8px"><span style="font:700 13px ui-monospace,'SF Mono',Menlo,Consolas,monospace;width:22px;height:22px;border-radius:50%;background:#163828;display:grid;place-items:center">3</span><span style="font:600 11px ui-monospace,'SF Mono',Menlo,Consolas,monospace;letter-spacing:.12em;color:#93AC9D">発表 ／ AWARDS</span></div>
+        <div style="background:#10291E;border:1px solid #2E5944;border-radius:12px;padding:12px 16px;font-size:13.5px"><a href="#p8" style="color:inherit;text-decoration:none">順位・表彰</a><span style="color:#93AC9D;font-size:11.5px"> ― 受賞者は自動</span></div>
+        <div style="background:#10291E;border:1px solid #2E5944;border-radius:12px;padding:12px 16px;font-size:13.5px">発表スクリーン<span style="color:#93AC9D;font-size:11.5px"> ― ←→で送る</span></div>
+        <div style="background:#10291E;border:1px solid #2E5944;border-radius:12px;padding:12px 16px;font-size:13.5px">結果共有・出力<span style="color:#93AC9D;font-size:11.5px"> ― 印刷・CSV・PDF</span></div>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;font-size:12.5px;line-height:1.7;color:#c9d3c8;border-top:1px solid #2E5944;padding-top:20px">
+      <div><b style="color:#F4F1E5">フェーズは「今いる場所」</b><br>ヘッダーの切替で 準備／当日／発表 を選ぶ。前のフェーズは消えず折りたたむだけ。「消えた」と思わせない。</div>
+      <div><b style="color:#F4F1E5">「次にやること」を常に1つ</b><br>ハブと各画面の右上に、未完了の最初の作業への導線を出す。11タブから選ぶ必要をなくす。</div>
+      <div><b style="color:#F4F1E5">任意ルールは後付け</b><br>作成時は基本4項目＋競技方法のみ。馬券・GTO等は「追加ルール」から入れると、対応タブが初めて現れる。</div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ PC 画面 ============ -->
+<div style="padding:8px 48px 48px;display:flex;flex-direction:column;gap:40px">
+
+<!-- P1 ホーム -->
+<div id="p1" style="display:flex;flex-direction:column;gap:9px">
+  <div style="display:flex;align-items:baseline;gap:8px;font-size:12px;color:#6f8a78"><a href="#p1" style="font:600 10.5px ui-monospace,'SF Mono',Menlo,Consolas,monospace;padding:3px 7px;background:rgba(0,0,0,.1);border-radius:5px;text-decoration:none;color:#15171b">P1</a>ホーム — 大会一覧と「つづきから」</div>
+  <div data-screen-label="P1 ホーム" style="width:1280px;height:800px;background:#081810;color:#F4F1E5;border-radius:12px;overflow:hidden;font-family:'Hiragino Kaku Gothic ProN','Hiragino Sans','Yu Gothic',Meiryo,sans-serif;display:flex;flex-direction:column">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:22px 40px;border-bottom:1px solid #163828">
+      <div style="display:flex;align-items:baseline;gap:6px"><span style="font:700 20px ui-monospace,'SF Mono',Menlo,Consolas,monospace;letter-spacing:-.02em">CompeMaster</span><span style="font:700 12px ui-monospace,'SF Mono',Menlo,Consolas,monospace;color:#D9B166;letter-spacing:.1em">PRO</span></div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <span style="font-size:12.5px;color:#93AC9D">コースマスタ</span><span style="font-size:12.5px;color:#93AC9D;margin-left:16px">使い方</span>
+        <span style="width:34px;height:34px;border-radius:50%;background:#163828;margin-left:16px;display:grid;place-items:center;font:600 12px ui-monospace,'SF Mono',Menlo,Consolas,monospace">TH</span>
+      </div>
+    </div>
+    <div style="padding:40px;display:grid;grid-template-columns:1fr 380px;gap:32px;flex:1;min-height:0">
+      <div style="display:flex;flex-direction:column;gap:24px">
+        <div style="display:flex;align-items:baseline;justify-content:space-between;gap:16px"><div style="min-width:0"><div style="font:600 11px ui-monospace,'SF Mono',Menlo,Consolas,monospace;letter-spacing:.12em;color:#93AC9D">NEXT UP</div><div style="font-size:26px;font-weight:700;margin-top:6px">次の大会</div></div><span style="font-size:12px;color:#93AC9D;background:#10291E;border:1px solid #2E5944;border-radius:8px;padding:6px 10px;white-space:nowrap;font-family:ui-monospace,'SF Mono',Menlo,Consolas,monospace">2026-09-19_秋季.json</span><span style="font-size:13px;color:#93AC9D;margin-left:12px;white-space:nowrap">開催まで <b style="font:700 20px ui-monospace,'SF Mono',Menlo,Consolas,monospace;color:#D9B166">3</b> 日</span></div>
+        <div style="background:#10291E;border:1px solid #2E5944;border-radius:18px;padding:28px;display:grid;grid-template-columns:1fr 200px;gap:24px">
+          <div style="display:flex;flex-direction:column;gap:18px">
+            <div><div style="font-size:24px;font-weight:700">第12回 秋季 社内コンペ</div><div style="font-size:13.5px;color:#93AC9D;margin-top:6px">2026.09.19（土）・さくら台カントリー倶楽部 東コース・24名 6組</div></div>
+            <div style="display:flex;gap:6px;align-items:center">
+              <div style="flex:1;height:6px;border-radius:3px;background:#D9B166"></div>
+              <div style="flex:1;height:6px;border-radius:3px;background:#D9B166"></div>
+              <div style="flex:1;height:6px;border-radius:3px;background:linear-gradient(90deg,#D9B166 60%,#2E5944 60%)"></div>
+              <div style="flex:1;height:6px;border-radius:3px;background:#2E5944"></div>
+              <div style="flex:1;height:6px;border-radius:3px;background:#2E5944"></div>
+              <div style="flex:1;height:6px;border-radius:3px;background:#2E5944"></div>
+            </div>
+            <div style="display:flex;gap:18px;font-size:12.5px;color:#93AC9D"><span><b style="color:#D9B166">✓</b> 大会設定</span><span><b style="color:#D9B166">✓</b> 参加者 24名</span><span style="color:#F4F1E5"><b style="color:#F2D024">●</b> 組合せ 3／6組</span><span>集金</span><span>スコア</span><span>発表</span></div>
+            <div style="display:flex;gap:10px;margin-top:4px;flex-wrap:wrap"><span style="background:#D9B166;color:#081810;font-weight:700;border-radius:10px;padding:13px 20px;font-size:14px;white-space:nowrap">つづきから：組合せを決める →</span><span style="border:1px solid #2E5944;border-radius:10px;padding:13px 18px;font-size:14px;white-space:nowrap">大会ハブを開く</span></div>
+          </div>
+          <div style="background:#081810;border-radius:14px;padding:18px;display:flex;flex-direction:column;justify-content:space-between">
+            <div style="font:600 11px ui-monospace,'SF Mono',Menlo,Consolas,monospace;letter-spacing:.12em;color:#93AC9D">準備の進み</div>
+            <div style="font:700 56px/1 ui-monospace,'SF Mono',Menlo,Consolas,monospace;letter-spacing:-.03em">42<span style="font-size:22px;color:#93AC9D">%</span></div>
+            <div style="font-size:12px;color:#93AC9D">残り：組合せ 3組・スタート時刻</div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:baseline;justify-content:space-between;margin-top:8px"><div style="font-size:16px;font-weight:700">最近開いたファイル</div><span style="font-size:12.5px;color:#93AC9D">別のファイルを開く…</span></div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <div style="display:grid;grid-template-columns:120px 1fr 120px 100px 90px;gap:16px;align-items:center;padding:14px 18px;background:#10291E;border:1px solid #2E5944;border-radius:12px;font-size:13.5px"><span style="font:500 13px ui-monospace,'SF Mono',Menlo,Consolas,monospace;color:#93AC9D">2026.06.14</span><span>第11回 初夏 社内コンペ</span><span style="color:#93AC9D">28名・7組</span><span style="color:#93AC9D">優勝 佐藤</span><span style="color:#D9B166;font-size:12.5px;text-align:right">開く</span></div>
+          <div style="display:grid;grid-template-columns:120px 1fr 120px 100px 90px;gap:16px;align-items:center;padding:14px 18px;background:#10291E;border:1px solid #2E5944;border-radius:12px;font-size:13.5px"><span style="font:500 13px ui-monospace,'SF Mono',Menlo,Consolas,monospace;color:#93AC9D">2026.03.22</span><span>第10回 春季 社内コンペ</span><span style="color:#93AC9D">20名・5組</span><span style="color:#93AC9D">優勝 田中</span><span style="color:#D9B166;font-size:12.5px;text-align:right">開く</span></div>
+          <div style="display:grid;grid-template-columns:120px 1fr 120px 100px 90px;gap:16px;align-items:center;padding:14px 18px;background:#10291E;border:1px solid #2E5944;border-radius:12px;font-size:13.5px"><span style="font:500 13px ui-monospace,'SF Mono',Menlo,Consolas,monospace;color:#93AC9D">2025.11.30</span><span>第9回 忘年 社内コンペ</span><span style="color:#93AC9D">32名・8組</span><span style="color:#93AC9D">優勝 鈴木</span><span style="color:#D9B166;font-size:12.5px;text-align:right">開く</span></div>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:16px">
+        <div style="border:1px dashed #3E7058;border-radius:18px;padding:28px;display:flex;flex-direction:column;gap:12px;align-items:flex-start">
+          <span style="font:700 28px/1 ui-monospace,'SF Mono',Menlo,Consolas,monospace;color:#D9B166">＋</span>
+          <div style="font-size:18px;font-weight:700">新しい大会をはじめる</div>
+          <div style="font-size:13px;color:#93AC9D;line-height:1.6">大会名・会場・日付・1組の人数。この4つで作れます。ルールはあとから足せます。</div>
+          <span style="border:1px solid #D9B166;color:#D9B166;border-radius:10px;padding:11px 16px;font-size:13.5px;font-weight:600;margin-top:4px">前回のファイルから設定をコピー</span>
+        </div>
+        <div style="background:#10291E;border:1px solid #2E5944;border-radius:18px;padding:22px;display:flex;flex-direction:column;gap:10px">
+          <div style="font:600 11px ui-monospace,'SF Mono',Menlo,Consolas,monospace;letter-spacing:.12em;color:#93AC9D">保存</div>
+          <div style="font-size:13.5px;line-height:1.6">このファイルに自動保存中 <span style="color:#D9B166">●</span><br><span style="color:#93AC9D;font-size:12.5px">最終 09:41 ／ 1大会＝1ファイル。別端末へはこのファイルを渡すだけ</span></div>
+          <div style="display:flex;gap:8px"><span style="border:1px solid #2E5944;border-radius:8px;padding:8px 12px;font-size:12.5px">書き出す</span><span style="border:1px solid #2E5944;border-radius:8px;padding:8px 12px;font-size:12.5px">読み込む</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- P2 ウィザード step1 -->
+<div id="p2" style="display:flex;flex-direction:column;gap:9px">
+  <div style="display:flex;align-items:baseline;gap:8px;font-size:12px;color:#6f8a78"><a href="#p2" style="font:600 10.5px ui-monospace,'SF Mono',Menlo,Consolas,monospace;padding:3px 7px;background:rgba(0,0,0,.1);border-radius:5px;text-decoration:none;color:#15171b">P2</a>大会作成 1/3 — 必須はこの4つだけ</div>
+  <div data-screen-label="P2 大会作成 基本" style="width:1280px;height:800px;background:#081810;color:#F4F1E5;border-radius:12px;overflow:hidden;font-family:'Hiragino Kaku Gothic ProN','Hiragino Sans','Yu Gothic',Meiryo,sans-serif;display:flex;flex-direction:column">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:20px 40px;border-bottom:1px solid #163828">
+      <span style="font-size:13px;color:#93AC9D">← ホーム</span>
+      <div style="display:flex;align-items:center;gap:14px;font-size:13px">
+        <span style="display:flex;align-items:center;gap:8px;color:#F4F1E5"><span style="width:24px;height:24px;border-radius:50%;background:#D9B166;color:#081810;display:grid;place-items:center;font:700 12px ui-monospace,'SF Mono',Menlo,Consolas,monospace">1</span>基本</span><span style="width:40px;height:1px;background:#2E5944"></span>
+        <span style="display:flex;align-items:center;gap:8px;color:#93AC9D"><span style="width:24px;height:24px;border-radius:50%;border:1px solid #2E5944;display:grid;place-items:center;font:700 12px ui-monospace,'SF Mono',Menlo,Consolas,monospace">2</span>競技方法</span><span style="width:40px;height:1px;background:#2E5944"></span>
+        <span style="display:flex;align-items:center;gap:8px;color:#93AC9D"><span style="width:24px;height:24px;border-radius:50%;border:1px solid #2E5944;display:grid;place-items:center;font:700 12px ui-monospace,'SF Mono',Menlo,Consolas,monospace">3</span>追加ルール<span style="font-size:11px;color:#6f8a78">任意</span></span>
+      </div>
+      <span style="font-size:12.5px;color:#93AC9D">下書き保存中 ●</span>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 400px;flex:1;min-height:0">
+      <div style="padding:48px 64px;display:flex;flex-direction:column;gap:32px;max-width:760px">
+        <div><div style="font:600 11px ui-monospace,'SF Mono',Menlo,Consolas,monospace;letter-spacing:.12em;color:#93AC9D">STEP 1 / 3</div><div style="font-size:30px;font-weight:700;margin-top:8px;letter-spacing:-.01em">大会の基本を教えてください</div><div style="font-size:14px;color:#93AC9D;margin-top:8px">ここだけ埋めれば大会が作れます。あとから変えられます。</div></div>
+        <div style="display:flex;flex-direction:column;gap:8px"><label style="font-size:13px;font-weight:600">大会名</label><div style="background:#10291E;border:1px solid #2E5944;border-radius:12px;padding:15px 16px;font-size:16px">第12回 秋季 社内コンペ</div></div>
+        <div style="display:flex;flex-direction:column;gap:8px"><label style="font-size:13px;font-weight:600">会場 <span style="color:#93AC9D;font-weight:400;font-size:12px">— 選ぶと18ホールのパーが自動で入ります</span></label>
+          <div style="background:#10291E;border:1px solid #D9B166;border-radius:12px;padding:15px 16px;font-size:16px;display:flex;justify-content:space-between;align-items:center"><span>さくら台カントリー倶楽部 東コース</span><span style="font-size:12px;color:#D9B166">コースマスタから選択済 ✓</span></div>
+          <div style="display:flex;gap:8px;font-size:12px;color:#93AC9D"><span>最近使った：</span><span style="border:1px solid #2E5944;border-radius:999px;padding:3px 10px">みどり野CC 西コース</span><span style="border:1px solid #2E5944;border-radius:999px;padding:3px 10px">つばさの森GC</span></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+          <div style="display:flex;flex-direction:column;gap:8px"><label style="font-size:13px;font-weight:600">開催日</label><div style="background:#10291E;border:1px solid #2E5944;border-radius:12px;padding:15px 16px;font:500 16px ui-monospace,'SF Mono',Menlo,Consolas,monospace">2026 / 09 / 19 <span style="font-family:'Hiragino Kaku Gothic ProN','Hiragino Sans','Yu Gothic',Meiryo,sans-serif;font-size:13px;color:#93AC9D">（土）</span></div></div>
+          <div style="display:flex;flex-direction:column;gap:8px"><label style="font-size:13px;font-weight:600">1組の人数</label><div style="display:flex;background:#10291E;border:1px solid #2E5944;border-radius:12px;padding:5px;font:600 15px ui-monospace,'SF Mono',Menlo,Consolas,monospace"><span style="flex:1;text-align:center;padding:10px;border-radius:8px">3</span><span style="flex:1;text-align:center;padding:10px;border-radius:8px;background:#D9B166;color:#081810">4</span><span style="flex:1;text-align:center;padding:10px;border-radius:8px">5</span></div></div>
+        </div>
+        <div style="display:flex;gap:12px;margin-top:8px"><span style="background:#D9B166;color:#081810;font-weight:700;border-radius:12px;padding:15px 24px;font-size:15px">次へ：競技方法 →</span><span style="color:#93AC9D;font-size:13.5px;padding:15px 8px">前回（第11回）の設定を引き継ぐ</span></div>
+      </div>
+      <div style="background:#10291E;border-left:1px solid #163828;padding:48px 36px;display:flex;flex-direction:column;gap:24px">
+        <div style="font:600 11px ui-monospace,'SF Mono',Menlo,Consolas,monospace;letter-spacing:.12em;color:#93AC9D">この設定でできること</div>
+        <div style="display:flex;flex-direction:column;gap:14px;font-size:13.5px;line-height:1.6">
+          <div style="display:flex;gap:12px"><span style="color:#D9B166">✓</span><span>参加者の登録・組合せ（4名×N組）</span></div>
+          <div style="display:flex;gap:12px"><span style="color:#D9B166">✓</span><span>スコア入力とグロス順位</span></div>
+          <div style="display:flex;gap:12px"><span style="color:#D9B166">✓</span><span>スタート表・競技結果の印刷</span></div>
+          <div style="display:flex;gap:12px;color:#93AC9D"><span>○</span><span>ネット順位（ペリア等）→ 次のステップで</span></div>
+          <div style="display:flex;gap:12px;color:#93AC9D"><span>○</span><span>ニアピン・馬券・賞金 → 追加ルールで</span></div>
+        </div>
+        <div style="border-top:1px solid #2E5944;padding-top:20px;font-size:12.5px;color:#93AC9D;line-height:1.7">東コース：Par 72／OUT 36・IN 36。パー3は 3・7・12・16 番、パー5は 5・9・14・18 番。ニアピン・ドラコンのホール候補に自動で入ります。</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- P3 ウィザード step3 追加ルール -->
+<div id="p3" style="display:flex;flex-direction:column;gap:9px">
+  <div style="display:flex;align-items:baseline;gap:8px;font-size:12px;color:#6f8a78"><a href="#p3" style="font:600 10.5px ui-monospace,'SF Mono',Menlo,Consolas,monospace;padding:3px 7px;background:rgba(0,0,0,.1);border-radius:5px;text-decoration:none;color:#15171b">P3</a>大会作成 3/3 — 追加ルールは「入れると画面が増える」ことを見せる</div>
+  <div data-screen-label="P3 追加ルール" style="width:1280px;height:800px;background:#081810;color:#F4F1E5;border-radius:12px;overflow:hidden;font-family:'Hiragino Kaku Gothic ProN','Hiragino Sans','Yu Gothic',Meiryo,sans-serif;display:flex;flex-direction:column">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:20px 40px;border-bottom:1px solid #163828">
+      <span style="font-size:13px;color:#93AC9D">← 競技方法</span>
+      <div style="display:flex;align-items:center;gap:14px;font-size:13px">
+        <span style="display:flex;align-items:center;gap:8px;color:#93AC9D"><span style="width:24px;height:24px;border-radius:50%;background:#163828;color:#D9B166;display:grid;place-items:center;font-size:12px">✓</span>基本</span><span style="width:40px;height:1px;background:#2E5944"></span>
+        <span style="display:flex;align-items:center;gap:8px;color:#93AC9D"><span style="width:24px;height:24px;border-radius:50%;background:#163828;color:#D9B166;display:grid;place-items:center;font-size:12px">✓</span>競技方法</span><span style="width:40px;height:1px;background:#2E5944"></span>
+        <span style="display:flex;align-items:center;gap:8px;color:#F4F1E5"><span style="width:24px;height:24px;border-radius:50%;background:#D9B166;color:#081810;display:grid;place-items:center;font:700 12px ui-monospace,'SF Mono',Menlo,Consolas,monospace">3</span>追加ルール<span style="font-size:11px;color:#6f8a78">任意</span></span>
+      </div>
+      <span style="font-size:12.5px;color:#93AC9D">下書き保存中 ●</span>
+    </div>
+    <div style="padding:44px 64px;display:flex;flex-direction:column;gap:28px;flex:1;min-height:0">
+      <div style="display:flex;justify-content:space-between;align-items:flex-end"><div><div style="font:600 11px ui-monospace,'SF Mono',Menlo,Consolas,monospace;letter-spacing:.12em;color:#93AC9D">STEP 3 / 3 ・ 任意</div><div style="font-size:30px;font-weight:700;margin-top:8px;letter-spacing:-.01em">遊びのルールを足しますか？</div><div style="font-size:14px;color:#93AC9D;margin-top:8px">入れたものだけ、当日の画面に現れます。あとから足しても外しても大丈夫です。</div></div><span style="font-size:13px;color:#93AC9D">3つ選択中 → 当日タブが <b style="color:#F4F1E5">＋2</b></span></div>
+      <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px">
+        <div style="background:#10291E;border:1px solid #D9B166;border-radius:16px;padding:20px;display:flex;flex-direction:column;gap:10px;min-height:170px"><div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:16px;font-weight:700">ニアピン</span><span style="width:40px;height:22px;border-radius:11px;background:#D9B166;position:relative"><span style="position:absolute;right:2px;top:2px;width:18px;height:18px;border-radius:50%;background:#081810"></span></span></div><div style="font-size:12.5px;color:#c9d3c8;line-height:1.6">パー3でピンに最も近づけた人に賞。</div><div style="margin-top:auto;font-size:12px;color:#D9B166">対象：3・7・12・16番 ✎</div></div>
+        <div style="background:#10291E;border:1px solid #D9B166;border-radius:16px;padding:20px;display:flex;flex-direction:column;gap:10px;min-height:170px"><div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:16px;font-weight:700">ドラコン</span><span style="width:40px;height:22px;border-radius:11px;background:#D9B166;position:relative"><span style="position:absolute;right:2px;top:2px;width:18px;height:18px;border-radius:50%;background:#081810"></span></span></div><div style="font-size:12.5px;color:#c9d3c8;line-height:1.6">パー5で最も遠くへ飛ばした人に賞。</div><div style="margin-top:auto;font-size:12px;color:#D9B166">対象：5・14番 ✎</div></div>
+        <div style="background:#10291E;border:1px solid #D9B166;border-radius:16px;padding:20px;display:flex;flex-direction:column;gap:10px;min-height:170px"><div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:16px;font-weight:700">賞金・収支</span><span style="width:40px;height:22px;border-radius:11px;background:#D9B166;position:relative"><span style="position:absolute;right:2px;top:2px;width:18px;height:18px;border-radius:50%;background:#081810"></span></span></div><div style="font-size:12.5px;color:#c9d3c8;line-height:1.6">順位賞の金額と、集金・精算をまとめる。</div><div style="margin-top:auto;font-size:12px;color:#D9B166">画面が増える：集金</div></div>
+        <div style="background:#10291E;border:1px solid #2E5944;border-radius:16px;padding:20px;display:flex;flex-direction:column;gap:10px;min-height:170px"><div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:16px;font-weight:700">馬券（枠連）</span><span style="width:40px;height:22px;border-radius:11px;background:#2E5944;position:relative"><span style="position:absolute;left:2px;top:2px;width:18px;height:18px;border-radius:50%;background:#93AC9D"></span></span></div><div style="font-size:12.5px;color:#c9d3c8;line-height:1.6">上位2名が入る「枠」の組合せを当てる遊び。</div><div style="margin-top:auto;font-size:12px;color:#93AC9D">画面が増える：予想入力・集計</div></div>
+        <div style="background:#10291E;border:1px solid #2E5944;border-radius:16px;padding:20px;display:flex;flex-direction:column;gap:10px;min-height:170px"><div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:16px;font-weight:700">GTO（下位予想）</span><span style="width:40px;height:22px;border-radius:11px;background:#2E5944;position:relative"><span style="position:absolute;left:2px;top:2px;width:18px;height:18px;border-radius:50%;background:#93AC9D"></span></span></div><div style="font-size:12.5px;color:#c9d3c8;line-height:1.6">下位3名を順に当てる遊び。3連複／3連単。</div><div style="margin-top:auto;font-size:12px;color:#93AC9D">画面が増える：予想入力・集計</div></div>
+        <div style="background:#10291E;border:1px solid #2E5944;border-radius:16px;padding:20px;display:flex;flex-direction:column;gap:10px;min-height:170px"><div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:16px;font-weight:700">罰金</span><span style="width:40px;height:22px;border-radius:11px;background:#2E5944;position:relative"><span style="position:absolute;left:2px;top:2px;width:18px;height:18px;border-radius:50%;background:#93AC9D"></span></span></div><div style="font-size:12.5px;color:#c9d3c8;line-height:1.6">GTOの得票上位者に負けた人が支払う。</div><div style="margin-top:auto;font-size:12px;color:#6f8a78">GTOを入れると選べます</div></div>
+        <div style="background:#10291E;border:1px solid #2E5944;border-radius:16px;padding:20px;display:flex;flex-direction:column;gap:10px;min-height:170px"><div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:16px;font-weight:700">団体賞</span><span style="width:40px;height:22px;border-radius:11px;background:#2E5944;position:relative"><span style="position:absolute;left:2px;top:2px;width:18px;height:18px;border-radius:50%;background:#93AC9D"></span></span></div><div style="font-size:12.5px;color:#c9d3c8;line-height:1.6">所属ごとのネット合計で競う。</div><div style="margin-top:auto;font-size:12px;color:#93AC9D">参加者に「所属」列が増える</div></div>
+        <div style="background:#10291E;border:1px solid #2E5944;border-radius:16px;padding:20px;display:flex;flex-direction:column;gap:10px;min-height:170px"><div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:16px;font-weight:700">抽選賞</span><span style="width:40px;height:22px;border-radius:11px;background:#2E5944;position:relative"><span style="position:absolute;left:2px;top:2px;width:18px;height:18px;border-radius:50%;background:#93AC9D"></span></span></div><div style="font-size:12.5px;color:#c9d3c8;line-height:1.6">まだ何も当たっていない人から抽選。</div><div style="margin-top:auto;font-size:12px;color:#93AC9D">発表の最後に1枚増える</div></div>
+      </div>
+      <div style="display:flex;gap:12px;align-items:center;margin-top:auto"><span style="background:#D9B166;color:#081810;font-weight:700;border-radius:12px;padding:15px 24px;font-size:15px">この内容で大会を作る</span><span style="border:1px solid #2E5944;border-radius:12px;padding:15px 20px;font-size:14px">ルールなしで作る</span><span style="margin-left:auto;font-size:12.5px;color:#93AC9D">作成後は「大会ハブ ＞ 追加ルール」からいつでも変更できます</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- P4 大会ハブ -->
+<div id="p4" style="display:flex;flex-direction:column;gap:9px">
+  <div style="display:flex;align-items:baseline;gap:8px;font-size:12px;color:#6f8a78"><a href="#p4" style="font:600 10.5px ui-monospace,'SF Mono',Menlo,Consolas,monospace;padding:3px 7px;background:rgba(0,0,0,.1);border-radius:5px;text-decoration:none;color:#15171b">P4</a>大会ハブ — 左ナビは3フェーズ順、「次にやること」を1つだけ</div>
+  <div data-screen-label="P4 大会ハブ" style="width:1280px;height:800px;background:#081810;color:#F4F1E5;border-radius:12px;overflow:hidden;font-family:'Hiragino Kaku Gothic ProN','Hiragino Sans','Yu Gothic',Meiryo,sans-serif;display:grid;grid-template-columns:236px 1fr">
+    <div style="background:#050f0a;border-right:1px solid #163828;padding:22px 14px;display:flex;flex-direction:column;gap:6px;font-size:13.5px">
+      <div style="display:flex;align-items:baseline;gap:5px;padding:0 10px 18px"><span style="font:700 17px ui-monospace,'SF Mono',Menlo,Consolas,monospace;letter-spacing:-.02em">CompeMaster</span><span style="font:700 10px ui-monospace,'SF Mono',Menlo,Consolas,monospace;color:#D9B166;letter-spacing:.1em">PRO</span></div>
+      <div style="background:#10291E;border-radius:10px;padding:10px 12px;margin-bottom:14px"><div style="font-size:11px;color:#93AC9D">ファイル</div><div style="font-size:13px;font-weight:600;margin-top:2px">第12回 秋季 社内コンペ</div><div style="font-size:10.5px;color:#6f8a78;margin-top:2px;font-family:ui-monospace,'SF Mono',Menlo,Consolas,monospace">2026-09-19_秋季.json</div></div>
+      <div style="display:flex;align-items:center;gap:8px;padding:6px 10px 4px;color:#93AC9D;font:600 10.5px ui-monospace,'SF Mono',Menlo,Consolas,monospace;letter-spacing:.12em">1 ／ 準備</div>
+      <div style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:9px;background:#163828;color:#F4F1E5"><span style="width:6px;height:6px;border-radius:50%;background:#D9B166"></span>大会ハブ</div>
+      <div style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:9px;color:#c9d3c8"><span style="width:16px;height:16px;border-radius:50%;background:#163828;color:#D9B166;display:grid;place-items:center;font-size:10px">✓</span>大会設定</div>
+      <div style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:9px;color:#c9d3c8"><span style="width:16px;height:16px;border-radius:50%;background:#163828;color:#D9B166;display:grid;place-items:center;font-size:10px">✓</span>参加者<span style="margin-left:auto;font:500 12px ui-monospace,'SF Mono',Menlo,Consolas,monospace;color:#93AC9D">24</span></div>
+      <div style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:9px;color:#c9d3c8"><span style="width:16px;height:16px;border-radius:50%;border:1.5px solid #F2D024;display:grid;place-items:center"></span>組合せ<span style="margin-left:auto;font:500 12px ui-monospace,'SF Mono',Menlo,Consolas,monospace;color:#F2D024">3/6</span></div>
+      <div style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:9px;color:#c9d3c8"><span style="width:16px;height:16px;border-radius:50%;border:1.5px solid #2E5944"></span>追加ルール<span style="margin-left:auto;font:500 12px ui-monospace,'SF Mono',Menlo,Consolas,monospace;color:#93AC9D">3</span></div>
+      <div style="display:flex;align-items:center;gap:8px;padding:16px 10px 4px;color:#93AC9D;font:600 10.5px ui-monospace,'SF Mono',Menlo,Consolas,monospace;letter-spacing:.12em">2 ／ 当日</div>
+      <div style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:9px;color:#6f8a78"><span style="width:16px;height:16px;border-radius:50%;border:1.5px solid #2E5944"></span>集金</div>
+      <div style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:9px;color:#6f8a78"><span style="width:16px;height:16px;border-radius:50%;border:1.5px solid #2E5944"></span>スコア入力</div>
+      <div style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:9px;color:#6f8a78"><span style="width:16px;height:16px;border-radius:50%;border:1.5px solid #2E5944"></span>ニアピン・ドラコン</div>
+      <div style="display:flex;align-items:center;gap:8px;padding:16px 10px 4px;color:#93AC9D;font:600 10.5px ui-monospace,'SF Mono',Menlo,Consolas,monospace;letter-spacing:.12em">3 ／ 発表</div>
+      <div style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:9px;color:#6f8a78"><span style="width:16px;height:16px;border-radius:50%;border:1.5px solid #2E5944"></span>順位・表彰</div>
+      <div style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:9px;color:#6f8a78"><span style="width:16px;height:16px;border-radius:50%;border:1.5px solid #2E5944"></span>結果共有・出力</div>
+      <div style="margin-top:auto;display:flex;flex-wrap:wrap;gap:2px 10px;font-size:12px;color:#93AC9D;border-top:1px solid #163828;padding:10px 12px 0"><span>コースマスタ</span><span>データ</span><span>使い方</span></div>
+    </div>
+    <div style="display:flex;flex-direction:column;min-height:0">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:18px 36px;border-bottom:1px solid #163828">
+        <div style="display:flex;align-items:center;gap:14px"><span style="font-size:17px;font-weight:700">大会ハブ</span><span style="font-size:12.5px;color:#93AC9D;white-space:nowrap">2026.09.19（土）・さくら台CC 東・24名 6組</span></div>
+        <div style="display:flex;align-items:center;gap:14px"><span style="font-size:12px;color:#93AC9D">自動保存 09:41 ●</span><div style="display:flex;background:#10291E;border:1px solid #2E5944;border-radius:999px;padding:3px;font-size:12.5px"><span style="padding:6px 14px;border-radius:999px;background:#D9B166;color:#081810;font-weight:700">準備中</span><span style="padding:6px 14px;color:#93AC9D">当日</span><span style="padding:6px 14px;color:#93AC9D">発表</span></div></div>
+      </div>
+      <div style="padding:32px 36px;display:grid;grid-template-columns:1fr 340px;gap:24px;flex:1;min-height:0">
+        <div style="display:flex;flex-direction:column;gap:20px">
+          <div style="background:#D9B166;color:#081810;border-radius:18px;padding:26px 28px;display:grid;grid-template-columns:1fr auto;gap:20px;align-items:center">
+            <div><div style="font:600 11px ui-monospace,'SF Mono',Menlo,Consolas,monospace;letter-spacing:.12em;opacity:.7">次にやること</div><div style="font-size:26px;font-weight:700;margin-top:6px;letter-spacing:-.01em">組合せを決める — 残り3組</div><div style="font-size:13.5px;margin-top:6px;opacity:.8">参加者24名のうち12名がまだ組に入っていません。自動で割り当ててから手で直せます。</div></div>
+            <span style="background:#081810;color:#F4F1E5;font-weight:700;border-radius:12px;padding:15px 22px;font-size:14.5px;white-space:nowrap">組合せへ →</span>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px">
+            <div style="background:#10291E;border:1px solid #2E5944;border-radius:14px;padding:18px 20px"><div style="font-size:12px;color:#93AC9D">参加者</div><div style="font:700 34px/1.1 ui-monospace,'SF Mono',Menlo,Consolas,monospace;margin-top:6px">24<span style="font-size:14px;color:#93AC9D;font-weight:500"> 名</span></div><div style="font-size:12px;color:#D9B166;margin-top:6px">✓ 生年月日 24/24</div></div>
+            <div style="background:#10291E;border:1px solid #2E5944;border-radius:14px;padding:18px 20px"><div style="font-size:12px;color:#93AC9D">組合せ</div><div style="font:700 34px/1.1 ui-monospace,'SF Mono',Menlo,Consolas,monospace;margin-top:6px">3<span style="font-size:14px;color:#93AC9D;font-weight:500"> / 6 組</span></div><div style="font-size:12px;color:#F2D024;margin-top:6px">● スタート時刻 未設定</div></div>
+            <div style="background:#10291E;border:1px solid #2E5944;border-radius:14px;padding:18px 20px"><div style="font-size:12px;color:#93AC9D">競技方法</div><div style="font-size:20px;font-weight:700;margin-top:10px">新ペリア</div><div style="font-size:12px;color:#93AC9D;margin-top:6px">隠し12H・上限30・同スコアは年長者</div></div>
+          </div>
+          <div style="background:#10291E;border:1px solid #2E5944;border-radius:14px;padding:20px 22px;display:flex;flex-direction:column;gap:12px">
+            <div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font-size:14px;font-weight:700">準備チェックリスト</span><span style="font-size:12px;color:#93AC9D">4 / 7</span></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px 24px;font-size:13.5px">
+              <div style="display:flex;gap:10px;align-items:center;color:#93AC9D"><span style="color:#D9B166">✓</span>大会名・会場・日付</div>
+              <div style="display:flex;gap:10px;align-items:center;color:#93AC9D"><span style="color:#D9B166">✓</span>競技方法（新ペリア）</div>
+              <div style="display:flex;gap:10px;align-items:center;color:#93AC9D"><span style="color:#D9B166">✓</span>参加者 24名</div>
+              <div style="display:flex;gap:10px;align-items:center;color:#93AC9D"><span style="color:#D9B166">✓</span>ニアピン・ドラコンのホール</div>
+              <div style="display:flex;gap:10px;align-items:center"><span style="width:14px;height:14px;border-radius:50%;border:1.5px solid #F2D024"></span>組合せ・スタート時刻</div>
+              <div style="display:flex;gap:10px;align-items:center"><span style="width:14px;height:14px;border-radius:50%;border:1.5px solid #2E5944"></span>順位賞の金額</div>
+              <div style="display:flex;gap:10px;align-items:center"><span style="width:14px;height:14px;border-radius:50%;border:1.5px solid #2E5944"></span>スタート表を印刷</div>
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:16px">
+          <div style="background:#10291E;border:1px solid #2E5944;border-radius:14px;padding:20px 22px;display:flex;flex-direction:column;gap:12px">
+            <div style="font:600 11px ui-monospace,'SF Mono',Menlo,Consolas,monospace;letter-spacing:.12em;color:#93AC9D">使っている追加ルール</div>
+            <div style="display:flex;flex-wrap:wrap;gap:6px"><span style="border:1px solid #D9B166;color:#D9B166;border-radius:999px;padding:5px 11px;font-size:12px">ニアピン ×4</span><span style="border:1px solid #D9B166;color:#D9B166;border-radius:999px;padding:5px 11px;font-size:12px">ドラコン ×2</span><span style="border:1px solid #D9B166;color:#D9B166;border-radius:999px;padding:5px 11px;font-size:12px">賞金・収支</span><span style="border:1px dashed #3E7058;color:#93AC9D;border-radius:999px;padding:5px 11px;font-size:12px">＋ 足す</span></div>
+            <div style="font-size:12px;color:#93AC9D;line-height:1.6">馬券・GTOは入れていません。入れると当日に「予想入力」「集計」が現れます。</div>
+          </div>
+          <div style="background:#10291E;border:1px solid #2E5944;border-radius:14px;padding:20px 22px;display:flex;flex-direction:column;gap:10px">
+            <div style="font:600 11px ui-monospace,'SF Mono',Menlo,Consolas,monospace;letter-spacing:.12em;color:#93AC9D">当日の流れ（4つだけ）</div>
+            <div style="display:flex;flex-direction:column;gap:8px;font-size:13.5px">
+              <div style="display:flex;gap:10px"><span style="font:700 13px ui-monospace,'SF Mono',Menlo,Consolas,monospace;color:#93AC9D;width:14px">1</span>集金 — 受け取ったらチェック</div>
+              <div style="display:flex;gap:10px"><span style="font:700 13px ui-monospace,'SF Mono',Menlo,Consolas,monospace;color:#93AC9D;width:14px">2</span>スコア入力 — 3つ入れて全行○</div>
+              <div style="display:flex;gap:10px"><span style="font:700 13px ui-monospace,'SF Mono',Menlo,Consolas,monospace;color:#93AC9D;width:14px">3</span>ニアピン・ドラコン — 受賞者を選ぶ</div>
+              <div style="display:flex;gap:10px"><span style="font:700 13px ui-monospace,'SF Mono',Menlo,Consolas,monospace;color:#93AC9D;width:14px">4</span>発表 — 画面を送るだけ</div>
+            </div>
+            <div style="font-size:12px;color:#93AC9D;margin-top:4px">当日の朝、右上を「当日」に切り替えると準備の項目が折りたたまれます。</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- P5 参加者 -->
+<div id="p5" style="display:flex;flex-direction:column;gap:9px">
+  <div style="display:flex;align-items:baseline;gap:8px;font-size:12px;color:#6f8a78"><a href="#p5" style="font:600 10.5px ui-monospace,'SF Mono',Menlo,Consolas,monospace;padding:3px 7px;background:rgba(0,0,0,.1);border-radius:5px;text-decoration:none;color:#15171b">P5</a>参加者 — 貼り付け取り込みを主役に、表は必要な列だけ</div>
+  <div data-screen-label="P5 参加者" style="width:1280px;height:800px;background:#081810;color:#F4F1E5;border-radius:12px;overflow:hidden;font-family:'Hiragino Kaku Gothic ProN','Hiragino Sans','Yu Gothic',Meiryo,sans-serif;display:grid;grid-template-columns:236px 1fr">
+    <div style="background:#050f0a;border-right:1px solid #163828;padding:22px 14px;display:flex;flex-direction:column;gap:6px;font-size:13.5px">
+      <div style="display:flex;align-items:baseline;gap:5px;padding:0 10px 18px"><span style="font:700 17px ui-monospace,'SF Mono',Menlo,Consolas,monospace;letter-spacing:-.02em">CompeMaster</span><span style="font:700 10px ui-monospace,'SF Mono',Menlo,Consolas,monospace;color:#D9B166;letter-spacing:.1em">PRO</span></div>
+      <div style="background:#10291E;border-radius:10px;padding:10px 12px;margin-bottom:14px"><div style="font-size:11px;color:#93AC9D">ファイル</div><div style="font-size:13px;font-weight:600;margin-top:2px">第12回 秋季 社内コンペ</div><div style="font-size:10.5px;color:#6f8a78;margin-top:2px;font-family:ui-monospace,'SF Mono',Menlo,Consolas,monospace">2026-09-19_秋季.json</div></div>
+      <div style="display:flex;align-items:center;gap:8px;padding:6px 10px 4px;color:#93AC9D;font:600 10.5px ui-monospace,'SF Mono',Menlo,Consolas,monospace;letter-spacing:.12em">1 ／ 準備</div>
+      <div style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:9px;color:#c9d3c8"><span style="width:16px"></span>大会ハブ</div>
+      <div style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:9px;color:#c9d3c8"><span style="width:16px;height:16px;border-radius:50%;background:#163828;color:#D9B166;display:grid;place-items:center;font-size:10px">✓</span>大会設定</div>
+      <div style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:9px;background:#163828;color:#F4F1E5"><span style="width:6px;height:6px;border-radius:50%;background:#D9B166"></span>参加者<span style="margin-left:auto;font:500 12px ui-monospace,'SF Mono',Menlo,Consolas,monospace;color:#93AC9D">24</span></div>
+      <div style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:9px;color:#c9d3c8"><span style="width:16px;height:16px;border-radius:50%;border:1.5px solid #F2D024"></span>組合せ<span style="margin-left:auto;font:500 12px ui-monospace,'SF Mono',Menlo,Consolas,monospace;color:#F2D024">3/6</span></div>
+      <div style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:9px;color:#c9d3c8"><span style="width:16px;height:16px;border-radius:50%;border:1.5px solid #2E5944"></span>追加ルール</div>
+      <div style="display:flex;align-items:center;gap:8px;padding:16px 10px 4px;color:#93AC9D;font:600 10.5px ui-monospace,'SF Mono',Menlo,Consolas,monospace;letter-spacing:.12em">2 ／ 当日</div>
+      <div style="display:flex;align-items:center;gap:10px;padding:9px 12px;color:#6f8a78"><span style="width:16px;height:16px;border-radius:50%;border:1.5px solid #2E5944"></span>集金</div>
+      <div style="display:flex;align-items:center;gap:10px;padding:9px 12px;color:#6f8a78"><span style="width:16px;height:16px;border-radius:50%;border:1.5px solid #2E5944"></span>スコア入力</div>
+      <div style="display:flex;align-items:center;gap:10px;padding:9px 12px;color:#6f8a78"><span style="width:16px;height:16px;border-radius:50%;border:1.5px solid #2E5944"></span>ニアピン・ドラコン</div>
+      <div style="display:flex;align-items:center;gap:8px;padding:16px 10px 4px;color:#93AC9D;font:600 10.5px ui-monospace,'SF Mono',Menlo,Consolas,monospace;letter-spacing:.12em">3 ／ 発表</div>
+      <div style="display:flex;align-items:center;gap:10px;padding:9px 12px;color:#6f8a78"><span style="width:16px;height:16px;border-radius:50%;border:1.5px solid #2E5944"></span>順位・表彰</div>
+      <div style="display:flex;align-items:center;gap:10px;padding:9px 12px;color:#6f8a78"><span style="width:16px;height:16px;border-radius:50%;border:1.5px solid #2E5944"></span>結果共有・出力</div>
+    </div>
+    <div style="display:flex;flex-direction:column;min-height:0">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:18px 36px;border-bottom:1px solid #163828">
+        <div style="display:flex;align-items:center;gap:14px"><span style="font-size:17px;font-weight:700">参加者</span><span style="font-size:12.5px;color:#93AC9D">24名 ・ 生年月日 24/24 ・ 所属 18/24</span></div>
+        <div style="display:flex;gap:8px"><span style="border:1px solid #2E5944;border-radius:10px;padding:9px 14px;font-size:13px">＋ 1名追加</span><span style="background:#D9B166;color:#081810;font-weight:700;border-radius:10px;padding:9px 16px;font-size:13px">次へ：組合せ →</span></div>
+      </div>
+      <div style="padding:24px 36px;display:grid;grid-template-columns:1fr 320px;gap:20px;flex:1;min-height:0">
+        <div style="background:#10291E;border:1px solid #2E5944;border-radius:14px;overflow:hidden;display:flex;flex-direction:column">
+          <div style="display:grid;grid-template-columns:44px 1fr 140px 130px 90px 70px;gap:12px;padding:12px 18px;font-size:11.5px;color:#93AC9D;border-bottom:1px solid #2E5944;letter-spacing:.04em"><span>#</span><span>氏名</span><span>所属</span><span>生年月日</span><span>組</span><span></span></div>
+          <div style="display:grid;grid-template-columns:44px 1fr 140px 130px 90px 70px;gap:12px;padding:13px 18px;font-size:14px;border-bottom:1px solid #163828;align-items:center"><span style="font:500 13px ui-monospace,'SF Mono',Menlo,Consolas,monospace;color:#6f8a78">01</span><span style="font-weight:600">佐藤 健一</span><span style="color:#c9d3c8">営業1部</span><span style="font:500 13px ui-monospace,'SF Mono',Menlo,Consolas,monospace;color:#c9d3c8">1978.04.12</span><span style="font:600 12px ui-monospace,'SF Mono',Menlo,Consolas,monospace;background:#163828;border-radius:6px;padding:4px 8px;text-align:center">1組</span><span style="color:#6f8a78;text-align:right">⋮</span></div>
+          <div style="display:grid;grid-template-columns:44px 1fr 140px 130px 90px 70px;gap:12px;padding:13px 18px;font-size:14px;border-bottom:1px solid #163828;align-items:center"><span style="font:500 13px ui-monospace,'SF Mono',Menlo,Consolas,monospace;color:#6f8a78">02</span><span style="font-weight:600">田中 美咲</span><span style="color:#c9d3c8">総務部</span><span style="font:500 13px ui-monospace,'SF Mono',Menlo,Consolas,monospace;color:#c9d3c8">1985.11.03</span><span style="font:600 12px ui-monospace,'SF Mono',Menlo,Consolas,monospace;background:#163828;border-radius:6px;padding:4px 8px;text-align:center">1組</span><span style="color:#6f8a78;text-align:right">⋮</span></div>
+          <div style="display:grid;grid-template-columns:44px 1fr 140px 130px 90px 70px;gap:12px;padding:13px 18px;font-size:14px;border-bottom:1px solid #163828;align-items:center"><span style="font:500 13px ui-monospace,'SF Mono',Menlo,Consolas,monospace;color:#6f8a78">03</span><span style="font-weight:600">鈴木 大輔</span><span style="color:#c9d3c8">開発2部</span><span style="font:500 13px ui-monospace,'SF Mono',Menlo,Consolas,monospace;color:#c9d3c8">1990.07.21</span><span style="font:600 12px ui-monospace,'SF Mono',Menlo,Consolas,monospace;background:#163828;border-radius:6px;padding:4px 8px;text-align:center">1組</span><span style="color:#6f8a78;text-align:right">⋮</span></div>
+          <div style="display:grid;grid-template-columns:44px 1fr 140px 130px 90px 70px;gap:12px;padding:13px 18px;font-size:14px;border-bottom:1px solid #163828;align-items:center"><span style="font:500 13px ui-monospace,'SF Mono',Menlo,Consolas,monospace;color:#6f8a78">04</span><span style="font-weight:600">高橋 由美</span><span style="color:#c9d3c8">営業1部</span><span style="font:500 13px ui-monospace,'SF Mono',Menlo,Consolas,monospace;color:#c9d3c8">1982.02.09</span><span style="font:600 12px ui-monospace,'SF Mono',Menlo,Consolas,monospace;background:#163828;border-radius:6px;padding:4px 8px;text-align:center">1組</span><span style="color:#6f8a78;text-align:right">⋮</span></div>
+          <div style="display:grid;grid-template-columns:44px 1fr 140px 130px 90px 70px;gap:12px;padding:13px 18px;font-size:14px;border-bottom:1px solid #163828;align-items:center"><span style="font:500 13px ui-monospace,'SF Mono',Menlo,Consolas,monospace;color:#6f8a78">05</span><span style="font-weight:600">伊藤 隆</span><span style="color:#c9d3c8">経理部</span><span style="font:500 13px ui-monospace,'SF Mono',Menlo,Consolas,monospace;color:#c9d3c8">1971.09.30</span><span style="font:600 12px ui-monospace,'SF Mono',Menlo,Consolas,monospace;background:#163828;border-radius:6px;padding:4px 8px;text-align:center">2組</span><span style="color:#6f8a78;text-align:right">⋮</span></div>
+          <div style="display:grid;grid-template-columns:44px 1fr 140px 130px 90px 70px;gap:12px;padding:13px 18px;font-size:14px;border-bottom:1px solid #163828;align-items:center"><span style="font:500 13px ui-monospace,'SF Mono',Menlo,Consolas,monospace;color:#6f8a78">06</span><span style="font-weight:600">渡辺 直樹</span><span style="color:#6f8a78;border-bottom:1px dashed #3E7058">所属を入れる</span><span style="font:500 13px ui-monospace,'SF Mono',Menlo,Consolas,monospace;color:#c9d3c8">1988.12.15</span><span style="font:600 12px ui-monospace,'SF Mono',Menlo,Consolas,monospace;background:#163828;border-radius:6px;padding:4px 8px;text-align:center">2組</span><span style="color:#6f8a78;text-align:right">⋮</span></div>
+          <div style="display:grid;grid-template-columns:44px 1fr 140px 130px 90px 70px;gap:12px;padding:13px 18px;font-size:14px;border-bottom:1px solid #163828;align-items:center"><span style="font:500 13px ui-monospace,'SF Mono',Menlo,Consolas,monospace;color:#6f8a78">07</span><span style="font-weight:600">山本 恵子</span><span style="color:#c9d3c8">総務部</span><span style="font:500 13px ui-monospace,'SF Mono',Menlo,Consolas,monospace;color:#c9d3c8">1979.06.02</span><span style="font:600 12px ui-monospace,'SF Mono',Menlo,Consolas,monospace;background:#163828;border-radius:6px;padding:4px 8px;text-align:center">2組</span><span style="color:#6f8a78;text-align:right">⋮</span></div>
+          <div style="display:grid;grid-template-columns:44px 1fr 140px 130px 90px 70px;gap:12px;padding:13px 18px;font-size:14px;border-bottom:1px solid #163828;align-items:center"><span style="font:500 13px ui-monospace,'SF Mono',Menlo,Consolas,monospace;color:#6f8a78">08</span><span style="font-weight:600">中村 翔</span><span style="color:#c9d3c8">開発1部</span><span style="font:500 13px ui-monospace,'SF Mono',Menlo,Consolas,monospace;color:#c9d3c8">1995.03.18</span><span style="font:600 12px ui-monospace,'SF Mono',Menlo,Consolas,monospace;background:#163828;border-radius:6px;padding:4px 8px;text-align:center">2組</span><span style="color:#6f8a78;text-align:right">⋮</span></div>
+          <div style="display:grid;grid-template-columns:44px 1fr 140px 130px 90px 70px;gap:12px;padding:13px 18px;font-size:14px;border-bottom:1px solid #163828;align-items:center"><span style="font:500 13px ui-monospace,'SF Mono',Menlo,Consolas,monospace;color:#6f8a78">09</span><span style="font-weight:600">小林 誠</span><span style="color:#c9d3c8">営業2部</span><span style="font:500 13px ui-monospace,'SF Mono',Menlo,Consolas,monospace;color:#c9d3c8">1983.10.27</span><span style="font:600 12px ui-monospace,'SF Mono',Menlo,Consolas,monospace;background:#163828;border-radius:6px;padding:4px 8px;text-align:center">3組</span><span style="color:#6f8a78;text-align:right">⋮</span></div>
+          <div style="display:grid;grid-template-columns:44px 1fr 140px 130px 90px 70px;gap:12px;padding:13px 18px;font-size:14px;border-bottom:1px solid #163828;align-items:center"><span style="font:500 13px ui-monospace,'SF Mono',Menlo,Consolas,monospace;color:#6f8a78">10</span><span style="font-weight:600">加藤 亮</span><span style="color:#c9d3c8">経理部</span><span style="font:500 13px ui-monospace,'SF Mono',Menlo,Consolas,monospace;color:#c9d3c8">1976.01.08</span><span style="font:600 12px ui-monospace,'SF Mono',Menlo,Consolas,monospace;border:1px dashed #3E7058;color:#93AC9D;border-radius:6px;padding:3px 8px;text-align:center">未</span><span style="color:#6f8a78;text-align:right">⋮</span></div>
+          <div style="padding:12px 18px;font-size:12.5px;color:#93AC9D;margin-top:auto;border-top:1px solid #2E5944;display:flex;justify-content:space-between"><span>11〜24 は下にスクロール</span><span>行は掴んで並べ替えられます</span></div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <div style="background:#10291E;border:1px solid #2E5944;border-radius:14px;padding:20px;display:flex;flex-direction:column;gap:12px">
+            <div style="font-size:14px;font-weight:700">貼り付けて取り込む</div>
+            <div style="font-size:12.5px;color:#93AC9D;line-height:1.6">Excelの氏名・所属・生年月日をコピーして、ここに貼るだけ。列の順番は自由、生年月日は自動で見つけます。</div>
+            <div style="background:#081810;border:1px dashed #3E7058;border-radius:10px;min-height:120px;padding:14px;font-size:12.5px;color:#6f8a78;line-height:1.7">佐藤 健一　営業1部　1978/4/12<br>田中 美咲　総務部　1985/11/3<br>…</div>
+            <span style="background:#D9B166;color:#081810;font-weight:700;border-radius:10px;padding:11px 16px;font-size:13px;text-align:center">読み取って追加する</span>
+          </div>
+          <div style="background:#10291E;border:1px solid #2E5944;border-radius:14px;padding:18px 20px;font-size:12.5px;color:#93AC9D;line-height:1.7"><b style="color:#F4F1E5">生年月日はなぜ必要？</b><br>同スコアのときに年長者を上位にする設定のため。使わない設定なら列は隠れます。</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- P6 組合せ -->
+<div id="p6" style="display:flex;flex-direction:column;gap:9px">
+  <div style="display:flex;align-items:baseline;gap:8px;font-size:12px;color:#6f8a78"><a href="#p6" style="font:600 10.5px ui-monospace,'SF Mono',Menlo,Consolas,monospace;padding:3px 7px;background:rgba(0,0,0,.1);border-radius:5px;text-decoration:none;color:#15171b">P6</a>組合せ — 組をカードで並べ、未割り当てを右のトレイに</div>
+  <div data-screen-label="P6 組合せ" style="width:1280px;height:800px;background:#081810;color:#F4F1E5;border-radius:12px;overflow:hidden;font-family:'Hiragino Kaku Gothic ProN','Hiragino Sans','Yu Gothic',Meiryo,sans-serif;display:grid;grid-template-columns:236px 1fr">
+    <div style="background:#050f0a;border-right:1px solid #163828;padding:22px 14px;display:flex;flex-direction:column;gap:6px;font-size:13.5px">
+      <div style="display:flex;align-items:baseline;gap:5px;padding:0 10px 18px"><span style="font:700 17px ui-monospace,'SF Mono',Menlo,Consolas,monospace;letter-spacing:-.02em">CompeMaster</span><span style="font:700 10px ui-monospace,'SF Mono',Menlo,Consolas,monospace;color:#D9B166;letter-spacing:.1em">PRO</span></div>
+      <div style="background:#10291E;border-radius:10px;padding:10px 12px;margin-bottom:14px"><div style="font-size:11px;color:#93AC9D">ファイル</div><div style="font-size:13px;font-weight:600;margin-top:2px">第12回 秋季 社内コンペ</div><div style="font-size:10.5px;color:#6f8a78;margin-top:2px;font-family:ui-monospace,'SF Mono',Menlo,Consolas,monospace">2026-09-19_秋季.json</div></div>
+      <div style="display:flex;align-items:center;gap:8px;padding:6px 10px 4px;color:#93AC9D;font:600 10.5px ui-monospace,'SF Mono',Menlo,Consolas,monospace;letter-spacing:.12em">1 ／ 準備</div>
+      <div style="display:flex;align-items:center;gap:10px;padding:9px 12px;color:#c9d3c8"><span style="width:16px"></span>大会ハブ</div>
+      <div style="display:flex;align-items:center;gap:10px;padding:9px 12px;color:#c9d3c8"><span style="width:16px;height:16px;border-radius:50%;background:#163828;color:#D9B166;display:grid;place-items:center;font-size:10px">✓</span>大会設定</div>
+      <div style="display:flex;align-items:center;gap:10px;padding:9px 12px;color:#c9d3c8"><span style="width:16px;height:16px;border-radius:50%;background:#163828;color:#D9B166;display:grid;place-items:center;font-size:10px">✓</span>参加者<span style="margin-left:auto;font:500 12px ui-monospace,'SF Mono',Menlo,Consolas,monospace;color:#93AC9D">24</span></div>
+      <div style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:9px;background:#163828;color:#F4F1E5"><span style="width:6px;height:6px;border-radius:50%;background:#D9B166"></span>組合せ<span style="margin-left:auto;font:500 12px ui-monospace,'SF Mono',Menlo,Consolas,monospace;color:#F2D024">3/6</span></div>
+      <div style="display:flex;align-items:center;gap:10px;padding:9px 12px;color:#c9d3c8"><span style="width:16px;height:16px;border-radius:50%;border:1.5px solid #2E5944"></span>追加ルール</div>
+      <div style="display:flex;align-items:center;gap:8px;padding:16px 10px 4px;color:#93AC9D;font:600 10.5px ui-monospace,'SF Mono',Menlo,Consolas,monospace;letter-spacing:.12em">2 ／ 当日</div>
+      <div style="display:flex;align-items:center;gap:10px;padding:9px 12px;color:#6f8a78"><span style="width:16px;height:16px;border-radius:50%;border:1.5px solid #2E5944"></span>集金</div>
+      <div style="display:flex;align-items:center;gap:10px;padding:9px 12px;color:#6f8a78"><span style="width:16px;height:16px;border-radius:50%;border:1.5px solid #2E5944"></span>スコア入力</div>
+      <div style="display:flex;align-items:center;gap:10px;padding:9px 12px;color:#6f8a78"><span style="width:16px;height:16px;border-radius:50%;border:1.5px solid #2E5944"></span>ニアピン・ドラコン</div>
+      <div style="display:flex;align-items:center;gap:8px;padding:16px 10px 4px;color:#93AC9D;font:600 10.5px ui-monospace,'SF Mono',Menlo,Consolas,monospace;letter-spacing:.12em">3 ／ 発表</div>
+      <div style="display:flex;align-items:center;gap:10px;padding:9px 12px;color:#6f8a78"><span style="width:16px;height:16px;border-radius:50%;border:1.5px solid #2E5944"></span>順位・表彰</div>
+      <div style="display:flex;align-items:center;gap:10px;padding:9px 12px;color:#6f8a78"><span style="width:16px;height:16px;border-radius:50%;border:1.5px solid #2E5944"></span>結果共有・出力</div>
+    </div>
+    <div style="display:flex;flex-direction:column;min-height:0">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:18px 36px;border-bottom:1px solid #163828">
+        <div style="display:flex;align-items:center;gap:14px"><span style="font-size:17px;font-weight:700">組合せ</span><span style="font-size:12.5px;color:#93AC9D">6組 × 4名 ・ 12名が未割り当て</span></div>
+        <div style="display:flex;gap:8px;align-items:center"><span style="font-size:12.5px;color:#93AC9D;margin-right:6px">スタート 08:00 から 7分間隔</span><span style="border:1px solid #2E5944;border-radius:10px;padding:9px 14px;font-size:13px">残りを自動で割り当てる</span><span style="border:1px solid #2E5944;border-radius:10px;padding:9px 14px;font-size:13px">スタート表を印刷</span></div>
+      </div>
+      <div style="padding:24px 36px;display:grid;grid-template-columns:1fr 250px;gap:20px;flex:1;min-height:0">
+        <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));grid-auto-rows:1fr;gap:14px">
+          <div style="background:#10291E;border:1px solid #2E5944;border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:8px"><div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font:700 18px ui-monospace,'SF Mono',Menlo,Consolas,monospace">1<span style="font-family:'Hiragino Kaku Gothic ProN','Hiragino Sans','Yu Gothic',Meiryo,sans-serif;font-size:12px;color:#93AC9D;font-weight:500"> 組</span></span><span style="font:600 14px ui-monospace,'SF Mono',Menlo,Consolas,monospace;color:#D9B166">08:00</span></div><div style="background:#081810;border-radius:8px;padding:9px 12px;font-size:13.5px;display:flex;justify-content:space-between"><span>佐藤 健一</span><span style="color:#6f8a78;font-size:11px">営業1</span></div><div style="background:#081810;border-radius:8px;padding:9px 12px;font-size:13.5px;display:flex;justify-content:space-between"><span>田中 美咲</span><span style="color:#6f8a78;font-size:11px">総務</span></div><div style="background:#081810;border-radius:8px;padding:9px 12px;font-size:13.5px;display:flex;justify-content:space-between"><span>鈴木 大輔</span><span style="color:#6f8a78;font-size:11px">開発2</span></div><div style="background:#081810;border-radius:8px;padding:9px 12px;font-size:13.5px;display:flex;justify-content:space-between"><span>高橋 由美</span><span style="color:#6f8a78;font-size:11px">営業1</span></div></div>
+          <div style="background:#10291E;border:1px solid #2E5944;border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:8px"><div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font:700 18px ui-monospace,'SF Mono',Menlo,Consolas,monospace">2<span style="font-family:'Hiragino Kaku Gothic ProN','Hiragino Sans','Yu Gothic',Meiryo,sans-serif;font-size:12px;color:#93AC9D;font-weight:500"> 組</span></span><span style="font:600 14px ui-monospace,'SF Mono',Menlo,Consolas,monospace;color:#D9B166">08:07</span></div><div style="background:#081810;border-radius:8px;padding:9px 12px;font-size:13.5px;display:flex;justify-content:space-between"><span>伊藤 隆</span><span style="color:#6f8a78;font-size:11px">経理</span></div><div style="background:#081810;border-radius:8px;padding:9px 12px;font-size:13.5px;display:flex;justify-content:space-between"><span>渡辺 直樹</span><span style="color:#6f8a78;font-size:11px">—</span></div><div style="background:#081810;border-radius:8px;padding:9px 12px;font-size:13.5px;display:flex;justify-content:space-between"><span>山本 恵子</span><span style="color:#6f8a78;font-size:11px">総務</span></div><div style="background:#081810;border-radius:8px;padding:9px 12px;font-size:13.5px;display:flex;justify-content:space-between"><span>中村 翔</span><span style="color:#6f8a78;font-size:11px">開発1</span></div></div>
+          <div style="background:#10291E;border:1px solid #2E5944;border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:8px"><div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font:700 18px ui-monospace,'SF Mono',Menlo,Consolas,monospace">3<span style="font-family:'Hiragino Kaku Gothic ProN','Hiragino Sans','Yu Gothic',Meiryo,sans-serif;font-size:12px;color:#93AC9D;font-weight:500"> 組</span></span><span style="font:600 14px ui-monospace,'SF Mono',Menlo,Consolas,monospace;color:#D9B166">08:14</span></div><div style="background:#081810;border-radius:8px;padding:9px 12px;font-size:13.5px;display:flex;justify-content:space-between"><span>小林 誠</span><span style="color:#6f8a78;font-size:11px">営業2</span></div><div style="background:#081810;border-radius:8px;padding:9px 12px;font-size:13.5px;display:flex;justify-content:space-between"><span>吉田 麻衣</span><span style="color:#6f8a78;font-size:11px">人事</span></div><div style="background:#081810;border-radius:8px;padding:9px 12px;font-size:13.5px;display:flex;justify-content:space-between"><span>山田 剛</span><span style="color:#6f8a78;font-size:11px">開発2</span></div><div style="background:#081810;border-radius:8px;padding:9px 12px;font-size:13.5px;display:flex;justify-content:space-between"><span>佐々木 望</span><span style="color:#6f8a78;font-size:11px">営業1</span></div></div>
+          <div style="background:#10291E;border:1px dashed #3E7058;border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:8px"><div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font:700 18px ui-monospace,'SF Mono',Menlo,Consolas,monospace;color:#93AC9D">4<span style="font-family:'Hiragino Kaku Gothic ProN','Hiragino Sans','Yu Gothic',Meiryo,sans-serif;font-size:12px;font-weight:500"> 組</span></span><span style="font:600 14px ui-monospace,'SF Mono',Menlo,Consolas,monospace;color:#93AC9D">08:21</span></div><div style="border:1px dashed #2E5944;border-radius:8px;padding:9px 12px;font-size:12.5px;color:#6f8a78;text-align:center;flex:1;display:grid;place-items:center">ここにドラッグ<br>（4名）</div></div>
+          <div style="background:#10291E;border:1px dashed #3E7058;border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:8px"><div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font:700 18px ui-monospace,'SF Mono',Menlo,Consolas,monospace;color:#93AC9D">5<span style="font-family:'Hiragino Kaku Gothic ProN','Hiragino Sans','Yu Gothic',Meiryo,sans-serif;font-size:12px;font-weight:500"> 組</span></span><span style="font:600 14px ui-monospace,'SF Mono',Menlo,Consolas,monospace;color:#93AC9D">08:28</span></div><div style="border:1px dashed #2E5944;border-radius:8px;padding:9px 12px;font-size:12.5px;color:#6f8a78;text-align:center;flex:1;display:grid;place-items:center">ここにドラッグ<br>（4名）</div></div>
+          <div style="background:#10291E;border:1px dashed #3E7058;border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:8px"><div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font:700 18px ui-monospace,'SF Mono',Menlo,Consolas,monospace;color:#93AC9D">6<span style="font-family:'Hiragino Kaku Gothic ProN','Hiragino Sans','Yu Gothic',Meiryo,sans-serif;font-size:12px;font-weight:500"> 組</span></span><span style="font:600 14px ui-monospace,'SF Mono',Menlo,Consolas,monospace;color:#93AC9D">08:35</span></div><div style="border:1px dashed #2E5944;border-radius:8px;padding:9px 12px;font-size:12.5px;color:#6f8a78;text-align:center;flex:1;display:grid;place-items:center">ここにドラッグ<br>（4名）</div></div>
+        </div>
+        <div style="background:#050f0a;border:1px solid #2E5944;border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:8px;min-height:0">
+          <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px"><span style="font-size:13.5px;font-weight:700">未割り当て</span><span style="font:600 13px ui-monospace,'SF Mono',Menlo,Consolas,monospace;color:#F2D024">12</span></div>
+          <div style="background:#10291E;border:1px solid #2E5944;border-radius:8px;padding:9px 12px;font-size:13.5px;display:flex;gap:8px;align-items:center"><span style="color:#6f8a78">⋮⋮</span>加藤 亮</div>
+          <div style="background:#10291E;border:1px solid #2E5944;border-radius:8px;padding:9px 12px;font-size:13.5px;display:flex;gap:8px;align-items:center"><span style="color:#6f8a78">⋮⋮</span>松本 拓也</div>
+          <div style="background:#10291E;border:1px solid #2E5944;border-radius:8px;padding:9px 12px;font-size:13.5px;display:flex;gap:8px;align-items:center"><span style="color:#6f8a78">⋮⋮</span>井上 さくら</div>
+          <div style="background:#10291E;border:1px solid #2E5944;border-radius:8px;padding:9px 12px;font-size:13.5px;display:flex;gap:8px;align-items:center"><span style="color:#6f8a78">⋮⋮</span>木村 浩二</div>
+          <div style="background:#10291E;border:1px solid #2E5944;border-radius:8px;padding:9px 12px;font-size:13.5px;display:flex;gap:8px;align-items:center"><span style="color:#6f8a78">⋮⋮</span>林 優子</div>
+          <div style="background:#10291E;border:1px solid #2E5944;border-radius:8px;padding:9px 12px;font-size:13.5px;display:flex;gap:8px;align-items:center"><span style="color:#6f8a78">⋮⋮</span>清水 一郎</div>
+          <div style="background:#10291E;border:1px solid #2E5944;border-radius:8px;padding:9px 12px;font-size:13.5px;display:flex;gap:8px;align-items:center"><span style="color:#6f8a78">⋮⋮</span>森 千夏</div>
+          <div style="font-size:12px;color:#6f8a78;text-align:center;padding:6px">＋5名</div>
+          <span style="margin-top:auto;background:#D9B166;color:#081810;font-weight:700;border-radius:10px;padding:11px 14px;font-size:13px;text-align:center">上から順に割り当てる</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- P7 スコア入力（当日モード） -->
+<div id="p7" style="display:flex;flex-direction:column;gap:9px">
+  <div style="display:flex;align-items:baseline;gap:8px;font-size:12px;color:#6f8a78"><a href="#p7" style="font:600 10.5px ui-monospace,'SF Mono',Menlo,Consolas,monospace;padding:3px 7px;background:rgba(0,0,0,.1);border-radius:5px;text-decoration:none;color:#15171b">P7</a>スコア入力（当日モード）— 準備ナビは折りたたみ、1行＝グロス・HDCP・ネットの3つ</div>
+  <div data-screen-label="P7 スコア入力" style="width:1280px;height:800px;background:#081810;color:#F4F1E5;border-radius:12px;overflow:hidden;font-family:'Hiragino Kaku Gothic ProN','Hiragino Sans','Yu Gothic',Meiryo,sans-serif;display:grid;grid-template-columns:236px 1fr">
+    <div style="background:#050f0a;border-right:1px solid #163828;padding:22px 14px;display:flex;flex-direction:column;gap:6px;font-size:13.5px">
+      <div style="display:flex;align-items:baseline;gap:5px;padding:0 10px 18px"><span style="font:700 17px ui-monospace,'SF Mono',Menlo,Consolas,monospace;letter-spacing:-.02em">CompeMaster</span><span style="font:700 10px ui-monospace,'SF Mono',Menlo,Consolas,monospace;color:#D9B166;letter-spacing:.1em">PRO</span></div>
+      <div style="background:#10291E;border-radius:10px;padding:10px 12px;margin-bottom:14px"><div style="font-size:11px;color:#93AC9D">ファイル</div><div style="font-size:13px;font-weight:600;margin-top:2px">第12回 秋季 社内コンペ</div><div style="font-size:10.5px;color:#6f8a78;margin-top:2px;font-family:ui-monospace,'SF Mono',Menlo,Consolas,monospace">2026-09-19_秋季.json</div></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-radius:9px;color:#93AC9D;font-size:12.5px;background:#081810;border:1px solid #163828"><span><span style="color:#D9B166">✓</span> 準備 4項目</span><span>▸</span></div>
+      <div style="display:flex;align-items:center;gap:8px;padding:16px 10px 4px;color:#D9B166;font:600 10.5px ui-monospace,'SF Mono',Menlo,Consolas,monospace;letter-spacing:.12em">2 ／ 当日 ・ NOW</div>
+      <div style="display:flex;align-items:center;gap:10px;padding:9px 12px;color:#c9d3c8"><span style="width:16px;height:16px;border-radius:50%;background:#163828;color:#D9B166;display:grid;place-items:center;font-size:10px">✓</span>集金<span style="margin-left:auto;font:500 12px ui-monospace,'SF Mono',Menlo,Consolas,monospace;color:#93AC9D">24/24</span></div>
+      <div style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:9px;background:#163828;color:#F4F1E5"><span style="width:6px;height:6px;border-radius:50%;background:#D9B166"></span>スコア入力<span style="margin-left:auto;font:500 12px ui-monospace,'SF Mono',Menlo,Consolas,monospace;color:#F2D024">18/24</span></div>
+      <div style="display:flex;align-items:center;gap:10px;padding:9px 12px;color:#c9d3c8"><span style="width:16px;height:16px;border-radius:50%;border:1.5px solid #2E5944"></span>ニアピン・ドラコン<span style="margin-left:auto;font:500 12px ui-monospace,'SF Mono',Menlo,Consolas,monospace;color:#93AC9D">0/6</span></div>
+      <div style="display:flex;align-items:center;gap:8px;padding:16px 10px 4px;color:#93AC9D;font:600 10.5px ui-monospace,'SF Mono',Menlo,Consolas,monospace;letter-spacing:.12em">3 ／ 発表</div>
+      <div style="display:flex;align-items:center;gap:10px;padding:9px 12px;color:#6f8a78"><span style="width:16px;height:16px;border-radius:50%;border:1.5px solid #2E5944"></span>順位・表彰</div>
+      <div style="display:flex;align-items:center;gap:10px;padding:9px 12px;color:#6f8a78"><span style="width:16px;height:16px;border-radius:50%;border:1.5px solid #2E5944"></span>結果共有・出力</div>
+      <div style="margin-top:auto;background:#10291E;border-radius:10px;padding:12px 14px;font-size:12px;color:#93AC9D;line-height:1.6">当日モード中。準備の項目は折りたたんでいます。直すときは右上を「準備中」に戻してください。</div>
+    </div>
+    <div style="display:flex;flex-direction:column;min-height:0">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:18px 36px;border-bottom:1px solid #163828">
+        <div style="display:flex;align-items:center;gap:14px"><span style="font-size:17px;font-weight:700">スコア入力</span><span style="font-size:12.5px;color:#93AC9D;white-space:nowrap">新ペリア ・ 隠し12H ・ HDCP上限30</span></div>
+        <div style="display:flex;align-items:center;gap:14px"><span style="font-size:12px;color:#93AC9D">自動保存 15:02 ●</span><div style="display:flex;background:#10291E;border:1px solid #2E5944;border-radius:999px;padding:3px;font-size:12.5px"><span style="padding:6px 14px;color:#93AC9D">準備中</span><span style="padding:6px 14px;border-radius:999px;background:#D9B166;color:#081810;font-weight:700">当日</span><span style="padding:6px 14px;color:#93AC9D">発表</span></div></div>
+      </div>
+      <div style="padding:24px 36px;display:grid;grid-template-columns:1fr 300px;gap:20px;flex:1;min-height:0">
+        <div style="display:flex;flex-direction:column;gap:14px;min-height:0">
+          <div style="display:flex;align-items:center;gap:14px"><div style="flex:1;height:8px;border-radius:4px;background:#163828;overflow:hidden"><div style="width:75%;height:100%;background:#D9B166"></div></div><span style="font:600 14px ui-monospace,'SF Mono',Menlo,Consolas,monospace">18<span style="color:#93AC9D"> / 24 入力済</span></span><span style="font-size:12.5px;color:#93AC9D;white-space:nowrap">・ 全行○で確定</span></div>
+          <div style="background:#10291E;border:1px solid #2E5944;border-radius:14px;overflow:hidden;display:flex;flex-direction:column">
+            <div style="display:grid;grid-template-columns:60px 1fr 110px 110px 110px 60px;gap:12px;padding:12px 18px;font-size:11.5px;color:#93AC9D;border-bottom:1px solid #2E5944"><span>組</span><span>氏名</span><span style="text-align:center">グロス</span><span style="text-align:center">HDCP</span><span style="text-align:center">ネット</span><span style="text-align:center">検算</span></div>
+            <div style="display:grid;grid-template-columns:60px 1fr 110px 110px 110px 60px;gap:12px;padding:10px 18px;font-size:14px;border-bottom:1px solid #163828;align-items:center"><span style="font:500 13px ui-monospace,'SF Mono',Menlo,Consolas,monospace;color:#6f8a78">1</span><span style="font-weight:600">佐藤 健一</span><span style="font:600 18px ui-monospace,'SF Mono',Menlo,Consolas,monospace;text-align:center;background:#081810;border-radius:8px;padding:8px">92</span><span style="font:600 18px ui-monospace,'SF Mono',Menlo,Consolas,monospace;text-align:center;background:#081810;border-radius:8px;padding:8px">14.4</span><span style="font:600 18px ui-monospace,'SF Mono',Menlo,Consolas,monospace;text-align:center;background:#081810;border-radius:8px;padding:8px">77.6</span><span style="text-align:center;color:#D9B166;font-size:16px">○</span></div>
+            <div style="display:grid;grid-template-columns:60px 1fr 110px 110px 110px 60px;gap:12px;padding:10px 18px;font-size:14px;border-bottom:1px solid #163828;align-items:center"><span style="font:500 13px ui-monospace,'SF Mono',Menlo,Consolas,monospace;color:#6f8a78">1</span><span style="font-weight:600">田中 美咲</span><span style="font:600 18px ui-monospace,'SF Mono',Menlo,Consolas,monospace;text-align:center;background:#081810;border-radius:8px;padding:8px">105</span><span style="font:600 18px ui-monospace,'SF Mono',Menlo,Consolas,monospace;text-align:center;background:#081810;border-radius:8px;padding:8px">26.4</span><span style="font:600 18px ui-monospace,'SF Mono',Menlo,Consolas,monospace;text-align:center;background:#081810;border-radius:8px;padding:8px">78.6</span><span style="text-align:center;color:#D9B166;font-size:16px">○</span></div>
+            <div style="display:grid;grid-template-columns:60px 1fr 110px 110px 110px 60px;gap:12px;padding:10px 18px;font-size:14px;border-bottom:1px solid #163828;align-items:center"><span style="font:500 13px ui-monospace,'SF Mono',Menlo,Consolas,monospace;color:#6f8a78">1</span><span style="font-weight:600">鈴木 大輔</span><span style="font:600 18px ui-monospace,'SF Mono',Menlo,Consolas,monospace;text-align:center;background:#081810;border-radius:8px;padding:8px">88</span><span style="font:600 18px ui-monospace,'SF Mono',Menlo,Consolas,monospace;text-align:center;background:#081810;border-radius:8px;padding:8px">9.6</span><span style="font:600 18px ui-monospace,'SF Mono',Menlo,Consolas,monospace;text-align:center;background:#081810;border-radius:8px;padding:8px;border:1px solid #ff7f7f">79.4</span><span style="text-align:center;color:#ff7f7f;font-size:14px">78.4?</span></div>
+            <div style="display:grid;grid-template-columns:60px 1fr 110px 110px 110px 60px;gap:12px;padding:10px 18px;font-size:14px;border-bottom:1px solid #163828;align-items:center"><span style="font:500 13px ui-monospace,'SF Mono',Menlo,Consolas,monospace;color:#6f8a78">1</span><span style="font-weight:600">高橋 由美</span><span style="font:600 18px ui-monospace,'SF Mono',Menlo,Consolas,monospace;text-align:center;background:#081810;border-radius:8px;padding:8px">98</span><span style="font:600 18px ui-monospace,'SF Mono',Menlo,Consolas,monospace;text-align:center;background:#081810;border-radius:8px;padding:8px">20.4</span><span style="font:600 18px ui-monospace,'SF Mono',Menlo,Consolas,monospace;text-align:center;background:#081810;border-radius:8px;padding:8px">77.6</span><span style="text-align:center;color:#D9B166;font-size:16px">○</span></div>
+            <div style="display:grid;grid-template-columns:60px 1fr 110px 110px 110px 60px;gap:12px;padding:10px 18px;font-size:14px;border-bottom:1px solid #163828;align-items:center"><span style="font:500 13px ui-monospace,'SF Mono',Menlo,Consolas,monospace;color:#6f8a78">2</span><span style="font-weight:600">伊藤 隆</span><span style="font:600 18px ui-monospace,'SF Mono',Menlo,Consolas,monospace;text-align:center;background:#081810;border-radius:8px;padding:8px">84</span><span style="font:600 18px ui-monospace,'SF Mono',Menlo,Consolas,monospace;text-align:center;background:#081810;border-radius:8px;padding:8px">7.2</span><span style="font:600 18px ui-monospace,'SF Mono',Menlo,Consolas,monospace;text-align:center;background:#081810;border-radius:8px;padding:8px">76.8</span><span style="text-align:center;color:#D9B166;font-size:16px">○</span></div>
+            <div style="display:grid;grid-template-columns:60px 1fr 110px 110px 110px 60px;gap:12px;padding:10px 18px;font-size:14px;border-bottom:1px solid #163828;align-items:center;background:#163828"><span style="font:500 13px ui-monospace,'SF Mono',Menlo,Consolas,monospace;color:#6f8a78">2</span><span style="font-weight:600">渡辺 直樹</span><span style="font:600 18px ui-monospace,'SF Mono',Menlo,Consolas,monospace;text-align:center;background:#081810;border-radius:8px;padding:8px;border:1px solid #D9B166">9<span style="color:#D9B166">|</span></span><span style="font:600 18px ui-monospace,'SF Mono',Menlo,Consolas,monospace;text-align:center;background:#081810;border-radius:8px;padding:8px;color:#6f8a78">—</span><span style="font:600 18px ui-monospace,'SF Mono',Menlo,Consolas,monospace;text-align:center;background:#081810;border-radius:8px;padding:8px;color:#6f8a78">—</span><span style="text-align:center;color:#6f8a78;font-size:14px">…</span></div>
+            <div style="display:grid;grid-template-columns:60px 1fr 110px 110px 110px 60px;gap:12px;padding:10px 18px;font-size:14px;border-bottom:1px solid #163828;align-items:center"><span style="font:500 13px ui-monospace,'SF Mono',Menlo,Consolas,monospace;color:#6f8a78">2</span><span style="font-weight:600;color:#93AC9D">山本 恵子</span><span style="font:600 18px ui-monospace,'SF Mono',Menlo,Consolas,monospace;text-align:center;background:#081810;border-radius:8px;padding:8px;color:#6f8a78">—</span><span style="font:600 18px ui-monospace,'SF Mono',Menlo,Consolas,monospace;text-align:center;background:#081810;border-radius:8px;padding:8px;color:#6f8a78">—</span><span style="font:600 18px ui-monospace,'SF Mono',Menlo,Consolas,monospace;text-align:center;background:#081810;border-radius:8px;padding:8px;color:#6f8a78">—</span><span></span></div>
+            <div style="padding:12px 18px;font-size:12.5px;color:#93AC9D;display:flex;justify-content:space-between;margin-top:auto"><span>Enter で次の欄 ・ Tab で次の人</span><span>9〜24 は下にスクロール</span></div>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <div style="background:#10291E;border:1px solid #ff7f7f;border-radius:14px;padding:18px 20px;display:flex;flex-direction:column;gap:8px"><div style="font-size:13.5px;font-weight:700;color:#ff7f7f">1件、計算が合いません</div><div style="font-size:13px;line-height:1.6">鈴木 大輔：88 − 9.6 ＝ <b>78.4</b> のはず。集計表は 79.4。</div><div style="display:flex;gap:8px;margin-top:4px"><span style="background:#F4F1E5;color:#081810;font-weight:700;border-radius:8px;padding:8px 12px;font-size:12.5px">78.4 に直す</span><span style="border:1px solid #2E5944;border-radius:8px;padding:8px 12px;font-size:12.5px">集計表が正しい</span></div></div>
+          <div style="background:#10291E;border:1px solid #2E5944;border-radius:14px;padding:18px 20px;display:flex;flex-direction:column;gap:10px"><div style="font-size:13.5px;font-weight:700">集計表を貼り付けて取り込む</div><div style="font-size:12.5px;color:#93AC9D;line-height:1.6">ゴルフ場の集計表（Excel・PDF・写真の文字）を貼ると、氏名で照合して一括で入ります。</div><span style="border:1px solid #2E5944;border-radius:10px;padding:10px 14px;font-size:13px;text-align:center">貼り付け欄を開く</span></div>
+          <div style="background:#10291E;border:1px solid #2E5944;border-radius:14px;padding:18px 20px;font-size:12.5px;color:#93AC9D;line-height:1.7"><b style="color:#F4F1E5">入力が終わると</b><br>順位が自動で確定し、「順位・表彰」に受賞者が入ります。ニアピン・ドラコンは別に選びます。</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- P8 順位・表彰 -->
+<div id="p8" style="display:flex;flex-direction:column;gap:9px">
+  <div style="display:flex;align-items:baseline;gap:8px;font-size:12px;color:#6f8a78"><a href="#p8" style="font:600 10.5px ui-monospace,'SF Mono',Menlo,Consolas,monospace;padding:3px 7px;background:rgba(0,0,0,.1);border-radius:5px;text-decoration:none;color:#15171b">P8</a>順位・表彰 — リーダーボードと賞を1画面に、発表はここから</div>
+  <div data-screen-label="P8 順位・表彰" style="width:1280px;height:800px;background:#081810;color:#F4F1E5;border-radius:12px;overflow:hidden;font-family:'Hiragino Kaku Gothic ProN','Hiragino Sans','Yu Gothic',Meiryo,sans-serif;display:grid;grid-template-columns:236px 1fr">
+    <div style="background:#050f0a;border-right:1px solid #163828;padding:22px 14px;display:flex;flex-direction:column;gap:6px;font-size:13.5px">
+      <div style="display:flex;align-items:baseline;gap:5px;padding:0 10px 18px"><span style="font:700 17px ui-monospace,'SF Mono',Menlo,Consolas,monospace;letter-spacing:-.02em">CompeMaster</span><span style="font:700 10px ui-monospace,'SF Mono',Menlo,Consolas,monospace;color:#D9B166;letter-spacing:.1em">PRO</span></div>
+      <div style="background:#10291E;border-radius:10px;padding:10px 12px;margin-bottom:14px"><div style="font-size:11px;color:#93AC9D">ファイル</div><div style="font-size:13px;font-weight:600;margin-top:2px">第12回 秋季 社内コンペ</div><div style="font-size:10.5px;color:#6f8a78;margin-top:2px;font-family:ui-monospace,'SF Mono',Menlo,Consolas,monospace">2026-09-19_秋季.json</div></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-radius:9px;color:#93AC9D;font-size:12.5px;background:#081810;border:1px solid #163828"><span><span style="color:#D9B166">✓</span> 準備 4項目</span><span>▸</span></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-radius:9px;color:#93AC9D;font-size:12.5px;background:#081810;border:1px solid #163828;margin-top:6px"><span><span style="color:#D9B166">✓</span> 当日 3項目</span><span>▸</span></div>
+      <div style="display:flex;align-items:center;gap:8px;padding:16px 10px 4px;color:#D9B166;font:600 10.5px ui-monospace,'SF Mono',Menlo,Consolas,monospace;letter-spacing:.12em">3 ／ 発表 ・ NOW</div>
+      <div style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:9px;background:#163828;color:#F4F1E5"><span style="width:6px;height:6px;border-radius:50%;background:#D9B166"></span>順位・表彰</div>
+      <div style="display:flex;align-items:center;gap:10px;padding:9px 12px;color:#c9d3c8"><span style="width:16px;height:16px;border-radius:50%;border:1.5px solid #2E5944"></span>発表スクリーン</div>
+      <div style="display:flex;align-items:center;gap:10px;padding:9px 12px;color:#c9d3c8"><span style="width:16px;height:16px;border-radius:50%;border:1.5px solid #2E5944"></span>結果共有・出力</div>
+    </div>
+    <div style="display:flex;flex-direction:column;min-height:0">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:18px 36px;border-bottom:1px solid #163828">
+        <div style="display:flex;align-items:center;gap:14px"><span style="font-size:17px;font-weight:700">順位・表彰</span><span style="font-size:12.5px;color:#93AC9D">24名 全員入力済 ・ 順位確定</span></div>
+        <div style="display:flex;align-items:center;gap:10px"><span style="border:1px solid #2E5944;border-radius:10px;padding:9px 14px;font-size:13px">競技結果を印刷</span><span style="background:#D9B166;color:#081810;font-weight:700;border-radius:10px;padding:9px 18px;font-size:13px">▶ 発表をはじめる</span></div>
+      </div>
+      <div style="padding:24px 36px;display:grid;grid-template-columns:1fr 320px;gap:20px;flex:1;min-height:0">
+        <div style="background:#10291E;border:1px solid #2E5944;border-radius:14px;overflow:hidden;display:flex;flex-direction:column">
+          <div style="display:grid;grid-template-columns:56px 1fr 90px 90px 100px 130px;gap:12px;padding:12px 18px;font-size:11.5px;color:#93AC9D;border-bottom:1px solid #2E5944"><span>順位</span><span>氏名</span><span style="text-align:right">グロス</span><span style="text-align:right">HDCP</span><span style="text-align:right">ネット</span><span style="text-align:right">賞</span></div>
+          <div style="display:grid;grid-template-columns:56px 1fr 90px 90px 100px 130px;gap:12px;padding:14px 18px;font-size:14.5px;border-bottom:1px solid #163828;align-items:center;background:linear-gradient(90deg,rgba(217,177,102,.12),transparent 40%)"><span style="font:700 24px ui-monospace,'SF Mono',Menlo,Consolas,monospace;color:#D9B166">1</span><span style="font-weight:700;font-size:16px">伊藤 隆<span style="font-size:11.5px;color:#93AC9D;font-weight:400;margin-left:8px">経理部</span></span><span style="font:500 15px ui-monospace,'SF Mono',Menlo,Consolas,monospace;text-align:right;color:#c9d3c8">84</span><span style="font:500 15px ui-monospace,'SF Mono',Menlo,Consolas,monospace;text-align:right;color:#c9d3c8">7.2</span><span style="font:700 18px ui-monospace,'SF Mono',Menlo,Consolas,monospace;text-align:right">76.8</span><span style="text-align:right;font-size:12.5px;color:#D9B166">優勝 ¥10,000</span></div>
+          <div style="display:grid;grid-template-columns:56px 1fr 90px 90px 100px 130px;gap:12px;padding:14px 18px;font-size:14.5px;border-bottom:1px solid #163828;align-items:center"><span style="font:700 20px ui-monospace,'SF Mono',Menlo,Consolas,monospace">2</span><span style="font-weight:600">佐藤 健一<span style="font-size:11.5px;color:#93AC9D;font-weight:400;margin-left:8px">営業1部</span></span><span style="font:500 15px ui-monospace,'SF Mono',Menlo,Consolas,monospace;text-align:right;color:#c9d3c8">92</span><span style="font:500 15px ui-monospace,'SF Mono',Menlo,Consolas,monospace;text-align:right;color:#c9d3c8">14.4</span><span style="font:700 18px ui-monospace,'SF Mono',Menlo,Consolas,monospace;text-align:right">77.6</span><span style="text-align:right;font-size:12.5px;color:#D9B166">2位 ¥5,000</span></div>
+          <div style="display:grid;grid-template-columns:56px 1fr 90px 90px 100px 130px;gap:12px;padding:14px 18px;font-size:14.5px;border-bottom:1px solid #163828;align-items:center"><span style="font:700 20px ui-monospace,'SF Mono',Menlo,Consolas,monospace">3</span><span style="font-weight:600">高橋 由美<span style="font-size:11.5px;color:#93AC9D;font-weight:400;margin-left:8px">営業1部</span></span><span style="font:500 15px ui-monospace,'SF Mono',Menlo,Consolas,monospace;text-align:right;color:#c9d3c8">98</span><span style="font:500 15px ui-monospace,'SF Mono',Menlo,Consolas,monospace;text-align:right;color:#c9d3c8">20.4</span><span style="font:700 18px ui-monospace,'SF Mono',Menlo,Consolas,monospace;text-align:right">77.6</span><span style="text-align:right;font-size:12.5px;color:#D9B166">3位 ¥3,000</span></div>
+          <div style="padding:6px 18px;font-size:11.5px;color:#6f8a78;border-bottom:1px solid #163828">2位と3位は同ネット。年長者を上位にしました（大会設定）</div>
+          <div style="display:grid;grid-template-columns:56px 1fr 90px 90px 100px 130px;gap:12px;padding:14px 18px;font-size:14.5px;border-bottom:1px solid #163828;align-items:center"><span style="font:700 20px ui-monospace,'SF Mono',Menlo,Consolas,monospace;color:#c9d3c8">4</span><span style="font-weight:600">鈴木 大輔<span style="font-size:11.5px;color:#93AC9D;font-weight:400;margin-left:8px">開発2部</span></span><span style="font:500 15px ui-monospace,'SF Mono',Menlo,Consolas,monospace;text-align:right;color:#c9d3c8">88</span><span style="font:500 15px ui-monospace,'SF Mono',Menlo,Consolas,monospace;text-align:right;color:#c9d3c8">9.6</span><span style="font:700 18px ui-monospace,'SF Mono',Menlo,Consolas,monospace;text-align:right">78.4</span><span style="text-align:right;font-size:12.5px;color:#93AC9D">ベスグロ</span></div>
+          <div style="display:grid;grid-template-columns:56px 1fr 90px 90px 100px 130px;gap:12px;padding:14px 18px;font-size:14.5px;border-bottom:1px solid #163828;align-items:center"><span style="font:700 20px ui-monospace,'SF Mono',Menlo,Consolas,monospace;color:#c9d3c8">5</span><span style="font-weight:600">田中 美咲<span style="font-size:11.5px;color:#93AC9D;font-weight:400;margin-left:8px">総務部</span></span><span style="font:500 15px ui-monospace,'SF Mono',Menlo,Consolas,monospace;text-align:right;color:#c9d3c8">105</span><span style="font:500 15px ui-monospace,'SF Mono',Menlo,Consolas,monospace;text-align:right;color:#c9d3c8">26.4</span><span style="font:700 18px ui-monospace,'SF Mono',Menlo,Consolas,monospace;text-align:right">78.6</span><span style="text-align:right;font-size:12.5px;color:#D9B166">5位 ¥2,000</span></div>
+          <div style="display:grid;grid-template-columns:56px 1fr 90px 90px 100px 130px;gap:12px;padding:14px 18px;font-size:14.5px;border-bottom:1px solid #163828;align-items:center"><span style="font:700 20px ui-monospace,'SF Mono',Menlo,Consolas,monospace;color:#c9d3c8">6</span><span style="font-weight:600">小林 誠<span style="font-size:11.5px;color:#93AC9D;font-weight:400;margin-left:8px">営業2部</span></span><span style="font:500 15px ui-monospace,'SF Mono',Menlo,Consolas,monospace;text-align:right;color:#c9d3c8">96</span><span style="font:500 15px ui-monospace,'SF Mono',Menlo,Consolas,monospace;text-align:right;color:#c9d3c8">16.8</span><span style="font:700 18px ui-monospace,'SF Mono',Menlo,Consolas,monospace;text-align:right">79.2</span><span></span></div>
+          <div style="padding:12px 18px;font-size:12.5px;color:#93AC9D;margin-top:auto;display:flex;justify-content:space-between"><span>7〜24位は下にスクロール</span><span>ブービー：24位 森 千夏</span></div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <div style="background:#10291E;border:1px solid #2E5944;border-radius:14px;padding:18px 20px;display:flex;flex-direction:column;gap:10px">
+            <div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font-size:13.5px;font-weight:700">技能賞</span><span style="font-size:12px;color:#D9B166">6 / 6 決定</span></div>
+            <div style="display:flex;flex-direction:column;gap:6px;font-size:13px">
+              <div style="display:flex;justify-content:space-between"><span style="color:#93AC9D">ニアピン 3番</span><span>中村 翔</span></div>
+              <div style="display:flex;justify-content:space-between"><span style="color:#93AC9D">ニアピン 7番</span><span>林 優子</span></div>
+              <div style="display:flex;justify-content:space-between"><span style="color:#93AC9D">ニアピン 12番</span><span>伊藤 隆</span></div>
+              <div style="display:flex;justify-content:space-between"><span style="color:#93AC9D">ニアピン 16番</span><span>山田 剛</span></div>
+              <div style="display:flex;justify-content:space-between"><span style="color:#93AC9D">ドラコン 5番</span><span>鈴木 大輔</span></div>
+              <div style="display:flex;justify-content:space-between"><span style="color:#93AC9D">ドラコン 14番</span><span>木村 浩二</span></div>
+            </div>
+          </div>
+          <div style="background:#10291E;border:1px solid #2E5944;border-radius:14px;padding:18px 20px;display:flex;flex-direction:column;gap:10px">
+            <div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font-size:13.5px;font-weight:700">発表の順番</span><span style="font-size:12px;color:#93AC9D">9枚</span></div>
+            <div style="font-size:12.5px;color:#c9d3c8;line-height:1.9">1 開幕 → 2 ブービー → 3 技能賞 → 4 10位・5位 → 5 3位 → 6 2位 → 7 優勝 → 8 ベスグロ → 9 閉幕</div>
+            <div style="font-size:12px;color:#93AC9D">← → で送る ・ F 全画面 ・ M 音</div>
+          </div>
+          <div style="background:#10291E;border:1px solid #2E5944;border-radius:14px;padding:18px 20px;display:flex;flex-direction:column;gap:8px"><div style="font-size:13.5px;font-weight:700">賞金合計</div><div style="font:700 28px/1 ui-monospace,'SF Mono',Menlo,Consolas,monospace">¥26,000</div><div style="font-size:12px;color:#93AC9D">原資 ¥28,800（1,200×24）・ 残 ¥2,800</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div>
+
+<!-- ============ スマホ ============ -->
+<div style="padding:8px 48px 64px;display:flex;flex-direction:column;gap:14px">
+  <div style="display:flex;align-items:baseline;gap:8px;font-size:12px;color:#6f8a78"><a href="#m1" id="m1" style="font:600 10.5px ui-monospace,'SF Mono',Menlo,Consolas,monospace;padding:3px 7px;background:rgba(0,0,0,.1);border-radius:5px;text-decoration:none;color:#15171b">M1–M3</a>スマホ — 当日はスマホ片手。下タブは当日の3つ＋順位、大きな数字</div>
+  <div style="display:flex;gap:28px;flex-wrap:wrap;align-items:flex-start">
+
+    <div data-screen-label="M1 ハブ" style="width:390px;height:844px;background:#081810;color:#F4F1E5;border-radius:44px;border:8px solid #0c1f15;overflow:hidden;font-family:'Hiragino Kaku Gothic ProN','Hiragino Sans','Yu Gothic',Meiryo,sans-serif;display:flex;flex-direction:column;position:relative">
+      <div style="display:flex;justify-content:space-between;padding:16px 28px 0;font:600 14px ui-monospace,'SF Mono',Menlo,Consolas,monospace"><span>9:41</span><span style="color:#93AC9D">●●● ▲ ▮</span></div>
+      <div style="padding:22px 22px 0;display:flex;flex-direction:column;gap:18px;flex:1;min-height:0">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:12px"><div style="min-width:0"><div style="font-size:11.5px;color:#93AC9D;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">第12回 秋季 社内コンペ</div><div style="font-size:22px;font-weight:700;margin-top:2px;white-space:nowrap">当日 09.19</div></div><div style="display:flex;flex-shrink:0;background:#10291E;border:1px solid #2E5944;border-radius:999px;padding:3px;font-size:11.5px;white-space:nowrap"><span style="padding:5px 10px;color:#93AC9D">準備</span><span style="padding:5px 10px;border-radius:999px;background:#D9B166;color:#081810;font-weight:700">当日</span></div></div>
+        <div style="background:#D9B166;color:#081810;border-radius:20px;padding:22px;display:flex;flex-direction:column;gap:8px"><div style="font:600 10.5px ui-monospace,'SF Mono',Menlo,Consolas,monospace;letter-spacing:.12em;opacity:.7">次にやること</div><div style="font-size:22px;font-weight:700;line-height:1.3">スコアを入れる<br>残り 6名</div><div style="font-size:12.5px;opacity:.8">3つ入れて○になれば正しい</div><span style="background:#081810;color:#F4F1E5;font-weight:700;border-radius:12px;padding:14px;font-size:14px;text-align:center;margin-top:6px">スコア入力へ →</span></div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <div style="display:flex;align-items:center;gap:12px;background:#10291E;border:1px solid #2E5944;border-radius:14px;padding:14px 16px"><span style="width:26px;height:26px;border-radius:50%;background:#163828;color:#D9B166;display:grid;place-items:center;font-size:12px">✓</span><div style="flex:1"><div style="font-size:14px;font-weight:600">集金</div><div style="font-size:11.5px;color:#93AC9D">24/24 受け取り済 ・ ¥28,800</div></div><span style="color:#6f8a78">›</span></div>
+          <div style="display:flex;align-items:center;gap:12px;background:#10291E;border:1px solid #D9B166;border-radius:14px;padding:14px 16px"><span style="font:700 13px ui-monospace,'SF Mono',Menlo,Consolas,monospace;width:26px;height:26px;border-radius:50%;border:1.5px solid #F2D024;display:grid;place-items:center">2</span><div style="flex:1"><div style="font-size:14px;font-weight:600">スコア入力</div><div style="font-size:11.5px;color:#F2D024">18/24 ・ 1件 計算が合いません</div></div><span style="color:#6f8a78">›</span></div>
+          <div style="display:flex;align-items:center;gap:12px;background:#10291E;border:1px solid #2E5944;border-radius:14px;padding:14px 16px"><span style="font:700 13px ui-monospace,'SF Mono',Menlo,Consolas,monospace;width:26px;height:26px;border-radius:50%;border:1.5px solid #2E5944;display:grid;place-items:center;color:#93AC9D">3</span><div style="flex:1"><div style="font-size:14px;font-weight:600">ニアピン・ドラコン</div><div style="font-size:11.5px;color:#93AC9D">0/6 受賞者を選ぶ</div></div><span style="color:#6f8a78">›</span></div>
+          <div style="display:flex;align-items:center;gap:12px;background:#10291E;border:1px solid #2E5944;border-radius:14px;padding:14px 16px;opacity:.6"><span style="font:700 13px ui-monospace,'SF Mono',Menlo,Consolas,monospace;width:26px;height:26px;border-radius:50%;border:1.5px solid #2E5944;display:grid;place-items:center;color:#93AC9D">4</span><div style="flex:1"><div style="font-size:14px;font-weight:600">発表</div><div style="font-size:11.5px;color:#93AC9D">スコアが揃うと押せます</div></div><span style="color:#6f8a78">›</span></div>
+        </div>
+        <div style="font-size:11.5px;color:#93AC9D;text-align:center">準備の項目（設定・参加者・組合せ）は上の「準備」から</div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);padding:12px 12px 26px;border-top:1px solid #163828;background:#050f0a;font-size:10.5px;text-align:center">
+        <div style="color:#D9B166;display:flex;flex-direction:column;gap:5px;align-items:center"><span style="width:22px;height:22px;border-radius:6px;background:#D9B166"></span>ハブ</div>
+        <div style="color:#93AC9D;display:flex;flex-direction:column;gap:5px;align-items:center"><span style="width:22px;height:22px;border-radius:6px;border:1.5px solid #3E7058"></span>スコア</div>
+        <div style="color:#93AC9D;display:flex;flex-direction:column;gap:5px;align-items:center"><span style="width:22px;height:22px;border-radius:6px;border:1.5px solid #3E7058"></span>技能賞</div>
+        <div style="color:#93AC9D;display:flex;flex-direction:column;gap:5px;align-items:center"><span style="width:22px;height:22px;border-radius:6px;border:1.5px solid #3E7058"></span>順位</div>
+      </div>
+      <div style="position:absolute;left:50%;bottom:8px;transform:translateX(-50%);width:120px;height:5px;border-radius:3px;background:#3E7058"></div>
+    </div>
+
+    <div data-screen-label="M2 スコア入力" style="width:390px;height:844px;background:#081810;color:#F4F1E5;border-radius:44px;border:8px solid #0c1f15;overflow:hidden;font-family:'Hiragino Kaku Gothic ProN','Hiragino Sans','Yu Gothic',Meiryo,sans-serif;display:flex;flex-direction:column;position:relative">
+      <div style="display:flex;justify-content:space-between;padding:16px 28px 0;font:600 14px ui-monospace,'SF Mono',Menlo,Consolas,monospace"><span>15:02</span><span style="color:#93AC9D">●●● ▲ ▮</span></div>
+      <div style="padding:18px 22px 0;display:flex;flex-direction:column;gap:14px;flex:1;min-height:0">
+        <div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:13px;color:#93AC9D;white-space:nowrap">‹ 一覧</span><span style="font:600 13px ui-monospace,'SF Mono',Menlo,Consolas,monospace;white-space:nowrap">19<span style="color:#93AC9D"> / 24</span></span><span style="font-size:13px;color:#D9B166;white-space:nowrap">次の人 ›</span></div>
+        <div style="height:6px;border-radius:3px;background:#163828;overflow:hidden"><div style="width:79%;height:100%;background:#D9B166"></div></div>
+        <div><div style="font-size:12px;color:#93AC9D">2組 ・ 3人目</div><div style="font-size:28px;font-weight:700;margin-top:2px">渡辺 直樹</div></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
+          <div style="background:#10291E;border:1px solid #D9B166;border-radius:16px;padding:14px 12px;display:flex;flex-direction:column;gap:6px"><span style="font-size:11px;color:#93AC9D">グロス</span><span style="font:700 34px/1 ui-monospace,'SF Mono',Menlo,Consolas,monospace">9<span style="color:#D9B166">|</span></span></div>
+          <div style="background:#10291E;border:1px solid #2E5944;border-radius:16px;padding:14px 12px;display:flex;flex-direction:column;gap:6px"><span style="font-size:11px;color:#93AC9D">HDCP</span><span style="font:700 34px/1 ui-monospace,'SF Mono',Menlo,Consolas,monospace;color:#3E7058">—</span></div>
+          <div style="background:#10291E;border:1px solid #2E5944;border-radius:16px;padding:14px 12px;display:flex;flex-direction:column;gap:6px"><span style="font-size:11px;color:#93AC9D">ネット</span><span style="font:700 34px/1 ui-monospace,'SF Mono',Menlo,Consolas,monospace;color:#3E7058">—</span></div>
+        </div>
+        <div style="font-size:12px;color:#93AC9D;text-align:center;line-height:1.6">グロス − HDCP ＝ ネット。3つ揃うと○が出ます</div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:auto;padding-bottom:6px">
+          <span style="background:#10291E;border-radius:14px;padding:16px;text-align:center;font:600 24px ui-monospace,'SF Mono',Menlo,Consolas,monospace">1</span><span style="background:#10291E;border-radius:14px;padding:16px;text-align:center;font:600 24px ui-monospace,'SF Mono',Menlo,Consolas,monospace">2</span><span style="background:#10291E;border-radius:14px;padding:16px;text-align:center;font:600 24px ui-monospace,'SF Mono',Menlo,Consolas,monospace">3</span>
+          <span style="background:#10291E;border-radius:14px;padding:16px;text-align:center;font:600 24px ui-monospace,'SF Mono',Menlo,Consolas,monospace">4</span><span style="background:#10291E;border-radius:14px;padding:16px;text-align:center;font:600 24px ui-monospace,'SF Mono',Menlo,Consolas,monospace">5</span><span style="background:#10291E;border-radius:14px;padding:16px;text-align:center;font:600 24px ui-monospace,'SF Mono',Menlo,Consolas,monospace">6</span>
+          <span style="background:#10291E;border-radius:14px;padding:16px;text-align:center;font:600 24px ui-monospace,'SF Mono',Menlo,Consolas,monospace">7</span><span style="background:#10291E;border-radius:14px;padding:16px;text-align:center;font:600 24px ui-monospace,'SF Mono',Menlo,Consolas,monospace">8</span><span style="background:#10291E;border-radius:14px;padding:16px;text-align:center;font:600 24px ui-monospace,'SF Mono',Menlo,Consolas,monospace">9</span>
+          <span style="background:#10291E;border-radius:14px;padding:16px;text-align:center;font:600 24px ui-monospace,'SF Mono',Menlo,Consolas,monospace">.</span><span style="background:#10291E;border-radius:14px;padding:16px;text-align:center;font:600 24px ui-monospace,'SF Mono',Menlo,Consolas,monospace">0</span><span style="background:#10291E;border-radius:14px;padding:16px;text-align:center;font:600 18px ui-monospace,'SF Mono',Menlo,Consolas,monospace;color:#93AC9D">⌫</span>
+          <span style="grid-column:1/-1;background:#D9B166;color:#081810;border-radius:14px;padding:16px;text-align:center;font-weight:700;font-size:15px">次の欄へ（HDCP）</span>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);padding:12px 12px 26px;border-top:1px solid #163828;background:#050f0a;font-size:10.5px;text-align:center">
+        <div style="color:#93AC9D;display:flex;flex-direction:column;gap:5px;align-items:center"><span style="width:22px;height:22px;border-radius:6px;border:1.5px solid #3E7058"></span>ハブ</div>
+        <div style="color:#D9B166;display:flex;flex-direction:column;gap:5px;align-items:center"><span style="width:22px;height:22px;border-radius:6px;background:#D9B166"></span>スコア</div>
+        <div style="color:#93AC9D;display:flex;flex-direction:column;gap:5px;align-items:center"><span style="width:22px;height:22px;border-radius:6px;border:1.5px solid #3E7058"></span>技能賞</div>
+        <div style="color:#93AC9D;display:flex;flex-direction:column;gap:5px;align-items:center"><span style="width:22px;height:22px;border-radius:6px;border:1.5px solid #3E7058"></span>順位</div>
+      </div>
+      <div style="position:absolute;left:50%;bottom:8px;transform:translateX(-50%);width:120px;height:5px;border-radius:3px;background:#3E7058"></div>
+    </div>
+
+    <div data-screen-label="M3 順位" style="width:390px;height:844px;background:#081810;color:#F4F1E5;border-radius:44px;border:8px solid #0c1f15;overflow:hidden;font-family:'Hiragino Kaku Gothic ProN','Hiragino Sans','Yu Gothic',Meiryo,sans-serif;display:flex;flex-direction:column;position:relative">
+      <div style="display:flex;justify-content:space-between;padding:16px 28px 0;font:600 14px ui-monospace,'SF Mono',Menlo,Consolas,monospace"><span>16:20</span><span style="color:#93AC9D">●●● ▲ ▮</span></div>
+      <div style="padding:18px 22px 0;display:flex;flex-direction:column;gap:14px;flex:1;min-height:0">
+        <div style="display:flex;justify-content:space-between;align-items:flex-end"><div><div style="font-size:12px;color:#93AC9D">順位確定 ・ 新ペリア</div><div style="font-size:24px;font-weight:700;margin-top:2px">順位</div></div><span style="font-size:12px;color:#D9B166">ネット ▾</span></div>
+        <div style="background:#10291E;border:1px solid #2E5944;border-radius:18px;overflow:hidden">
+          <div style="display:grid;grid-template-columns:40px 1fr 60px;gap:10px;padding:14px 16px;border-bottom:1px solid #163828;align-items:center;background:linear-gradient(90deg,rgba(217,177,102,.14),transparent 60%)"><span style="font:700 24px ui-monospace,'SF Mono',Menlo,Consolas,monospace;color:#D9B166">1</span><div><div style="font-size:15px;font-weight:700">伊藤 隆</div><div style="font-size:11px;color:#93AC9D">84 − 7.2 ・ 優勝</div></div><span style="font:700 20px ui-monospace,'SF Mono',Menlo,Consolas,monospace;text-align:right">76.8</span></div>
+          <div style="display:grid;grid-template-columns:40px 1fr 60px;gap:10px;padding:14px 16px;border-bottom:1px solid #163828;align-items:center"><span style="font:700 20px ui-monospace,'SF Mono',Menlo,Consolas,monospace">2</span><div><div style="font-size:15px;font-weight:600">佐藤 健一</div><div style="font-size:11px;color:#93AC9D">92 − 14.4</div></div><span style="font:700 20px ui-monospace,'SF Mono',Menlo,Consolas,monospace;text-align:right">77.6</span></div>
+          <div style="display:grid;grid-template-columns:40px 1fr 60px;gap:10px;padding:14px 16px;border-bottom:1px solid #163828;align-items:center"><span style="font:700 20px ui-monospace,'SF Mono',Menlo,Consolas,monospace">3</span><div><div style="font-size:15px;font-weight:600">高橋 由美</div><div style="font-size:11px;color:#93AC9D">98 − 20.4 ・ 同ネット→年長</div></div><span style="font:700 20px ui-monospace,'SF Mono',Menlo,Consolas,monospace;text-align:right">77.6</span></div>
+          <div style="display:grid;grid-template-columns:40px 1fr 60px;gap:10px;padding:14px 16px;border-bottom:1px solid #163828;align-items:center"><span style="font:700 20px ui-monospace,'SF Mono',Menlo,Consolas,monospace;color:#c9d3c8">4</span><div><div style="font-size:15px;font-weight:600">鈴木 大輔</div><div style="font-size:11px;color:#93AC9D">88 − 9.6 ・ ベスグロ</div></div><span style="font:700 20px ui-monospace,'SF Mono',Menlo,Consolas,monospace;text-align:right">78.4</span></div>
+          <div style="display:grid;grid-template-columns:40px 1fr 60px;gap:10px;padding:14px 16px;border-bottom:1px solid #163828;align-items:center"><span style="font:700 20px ui-monospace,'SF Mono',Menlo,Consolas,monospace;color:#c9d3c8">5</span><div><div style="font-size:15px;font-weight:600">田中 美咲</div><div style="font-size:11px;color:#93AC9D">105 − 26.4</div></div><span style="font:700 20px ui-monospace,'SF Mono',Menlo,Consolas,monospace;text-align:right">78.6</span></div>
+          <div style="display:grid;grid-template-columns:40px 1fr 60px;gap:10px;padding:14px 16px;align-items:center"><span style="font:700 20px ui-monospace,'SF Mono',Menlo,Consolas,monospace;color:#c9d3c8">6</span><div><div style="font-size:15px;font-weight:600">小林 誠</div><div style="font-size:11px;color:#93AC9D">96 − 16.8</div></div><span style="font:700 20px ui-monospace,'SF Mono',Menlo,Consolas,monospace;text-align:right">79.2</span></div>
+        </div>
+        <div style="font-size:12px;color:#6f8a78;text-align:center">7〜24位は下にスクロール</div>
+        <div style="margin-top:auto;display:flex;flex-direction:column;gap:8px;padding-bottom:10px"><span style="background:#D9B166;color:#081810;font-weight:700;border-radius:14px;padding:16px;font-size:15px;text-align:center">▶ 発表をはじめる（PCで表示）</span><span style="border:1px solid #2E5944;border-radius:14px;padding:14px;font-size:14px;text-align:center">結果を共有する</span></div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);padding:12px 12px 26px;border-top:1px solid #163828;background:#050f0a;font-size:10.5px;text-align:center">
+        <div style="color:#93AC9D;display:flex;flex-direction:column;gap:5px;align-items:center"><span style="width:22px;height:22px;border-radius:6px;border:1.5px solid #3E7058"></span>ハブ</div>
+        <div style="color:#93AC9D;display:flex;flex-direction:column;gap:5px;align-items:center"><span style="width:22px;height:22px;border-radius:6px;border:1.5px solid #3E7058"></span>スコア</div>
+        <div style="color:#93AC9D;display:flex;flex-direction:column;gap:5px;align-items:center"><span style="width:22px;height:22px;border-radius:6px;border:1.5px solid #3E7058"></span>技能賞</div>
+        <div style="color:#D9B166;display:flex;flex-direction:column;gap:5px;align-items:center"><span style="width:22px;height:22px;border-radius:6px;background:#D9B166"></span>順位</div>
+      </div>
+      <div style="position:absolute;left:50%;bottom:8px;transform:translateX(-50%);width:120px;height:5px;border-radius:3px;background:#3E7058"></div>
+    </div>
+  </div>
+  <div style="font-size:12px;color:#6f8a78;margin-top:8px;max-width:1280px;line-height:1.7">次の一手：「<a href="#p3">P3</a> の追加ルールを入れた状態のハブを見たい」「発表スクリーン（1920×1080）も」「馬券・GTOの予想入力画面」「配色を変えた案を1本だけ比較したい」</div>
+</div>
+
+</x-dc>
+</body>
+</html>

@@ -24,6 +24,7 @@ CompeMasterPro/
 │   └─ README.md          配布のしかた（利用者向け）
 ├─ tests/                 ← 検証スイート。28本・2338項目
 │   └─ *.js
+├─ design/                ← UI再設計のデザイン資料（アプリではない。公開されない）
 └─ CONTRIBUTING.md        この文書
 ```
 

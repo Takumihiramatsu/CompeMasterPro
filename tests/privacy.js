@@ -151,6 +151,8 @@ console.log('\n=== 9. 大会と会場が結び付いていないか（リポジ�
     fs.readdirSync(__dirname).filter(f=>f.endsWith('.js')).forEach(f=>T.push(['tests/'+f,fs.readFileSync(_P.join(__dirname,f),'utf8')]));
     ['README.md','HANDOVER.md','CONTRIBUTING.md','docs/README.md'].forEach(f=>{
       const q=_P.join(root,f); if(_F.existsSync(q)) T.push([f,fs.readFileSync(q,'utf8')]);});
+    /* 2026-09-24、UI再設計のデザイン資料を design/ に置いた。画面の見本に会場名・日付・氏名・スコアが並ぶため、同じ検査に掛ける */
+    { const dd=_P.join(root,'design'); if(_F.existsSync(dd)) _F.readdirSync(dd).filter(f=>/\.(html|md)$/.test(f)).forEach(f=>T.push(['design/'+f,fs.readFileSync(_P.join(dd,f),'utf8')])); }
     T.push(['docs/pc.html（マスタ以外）',pc.split('\n').filter(l=>!l.startsWith('const MSTZ=')).join('\n')]);
     chk('検査するファイルがそろう', T.length>=28, T.length+'本');
     /* 1. 正式名 */

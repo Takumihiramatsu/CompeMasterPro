@@ -25,6 +25,7 @@ CompeMasterPro/
 ├─ tests/                 ← 検証スイート。28本・2338項目
 │   └─ *.js
 ├─ design/                ← UI再設計のデザイン資料（アプリではない。公開されない）
+├─ venues/ ・ tools/      ← ゴルフ場専用版の設定とビルド（dist/ に生成。.gitignore で除外）
 └─ CONTRIBUTING.md        この文書
 ```
 
